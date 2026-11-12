@@ -1,0 +1,28 @@
+{% extends "base_auth.html" %}
+
+{% block title %}Sign In — MediCore{% endblock %}
+
+{% block auth_content %}
+<div>
+    <div class="mb-6 text-center">
+        <h2 class="text-xl font-bold text-slate-900 tracking-tight">Sign in to your account</h2>
+        <p class="text-xs text-slate-500 mt-1">Access your clinical workspace or patient portal</p>
+    </div>
+
+    <!-- HTMX Swappable Form Target -->
+    <div id="login-form-container">
+        {% include "accounts/partials/_login_form.html" %}
+    </div>
+
+    <!-- Register Link -->
+    <div class="mt-6 pt-5 border-t border-slate-100 text-center">
+        <p class="text-xs text-slate-500">
+            Don't have a patient account?
+            <a href="{% url 'accounts:register' %}" class="font-semibold text-sky-600 hover:text-sky-700 hover:underline">
+                Register as a Patient
+            </a>
+        </p>
+    </div>
+</div>
+{% endblock %}
+

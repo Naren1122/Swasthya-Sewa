@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}MediCore — Hospital Operations & Patient Care{% endblock %}</title>
+
+    <!-- Inter & JetBrains Mono Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+    <!-- Tailwind CSS v4 + DaisyUI CDN -->
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            200: '#bfdbfe',
+                            500: '#0284c7', // Primary Sky/Teal Medical Hue
+                            600: '#0369a1',
+                            700: '#075985',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- HTMX v2 + Alpine.js v3 -->
+    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
+    <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .htmx-indicator { display: none; }
+        .htmx-request .htmx-indicator { display: inline-flex; }
+        .htmx-request.htmx-indicator { display: inline-flex; }
+    </style>
+
+    {% block head_extra %}{% endblock %}
+</head>
+<body class="bg-base-100 text-base-content min-h-screen flex flex-col antialiased"
+      hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
+
+    <!-- Global Toast / Flash Messages -->
+    <div id="messages-container" class="toast toast-top toast-end z-50">
+        {% include "partials/_messages.html" %}
+    </div>
+
+    <!-- Application Shell Layout -->
+    {% block shell %}
+        <!-- Top Navbar -->
+        {% include "partials/_navbar.html" %}
+
+        <div class="flex-1 flex overflow-hidden">
+            <!-- Sidebar -->
+            {% if user.is_authenticated %}
+                {% include "partials/_sidebar.html" %}
+            {% endif %}
+
+            <!-- Main Content Area -->
+            <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50/50">
+                <div class="max-w-7xl mx-auto">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    {% endblock %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            if (window.lucide) { lucide.createIcons(); }
+        });
+        document.body.addEventListener('htmx:afterSwap', () => {
+            if (window.lucide) { lucide.createIcons(); }
+        });
+    </script>
+    {% block scripts_extra %}{% endblock %}
+</body>
+</html>
+
