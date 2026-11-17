@@ -1,0 +1,78 @@
+<div class="card bg-white border border-slate-200/90 rounded-3xl shadow-sm hover:shadow-xl transition-all duration-300 flex flex-col justify-between overflow-hidden group">
+  <div class="p-5 sm:p-6 space-y-4">
+    
+    <!-- Top Row: Avatar & Badges -->
+    <div class="flex items-start gap-4">
+      <div class="relative flex-shrink-0">
+        {% if doctor.avatar %}
+          <img src="{{ doctor.avatar.url }}" alt="{{ doctor.user.full_name }}" class="w-16 h-16 rounded-2xl object-cover border border-slate-100 shadow-sm" />
+        {% else %}
+          <div class="w-16 h-16 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white font-extrabold text-xl flex items-center justify-center shadow-md shadow-sky-600/20">
+            {{ doctor.user.full_name|slice:":2"|upper }}
+          </div>
+        {% endif %}
+        {% if doctor.is_verified %}
+          <span class="absolute -bottom-1 -right-1 w-5 h-5 rounded-full bg-emerald-500 text-white flex items-center justify-center text-[10px] shadow" title="NMC Verified">
+            <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i>
+          </span>
+        {% endif %}
+      </div>
+
+      <div class="flex-1 min-w-0">
+        <div class="flex flex-wrap items-center gap-1.5 mb-1">
+          <span class="badge badge-primary badge-outline text-[11px] font-semibold tracking-wide">
+            {{ doctor.department.name }}
+          </span>
+          {% if doctor.is_verified %}
+            <span class="badge badge-success text-[10px] font-bold text-white tracking-wider">
+              NMC {{ doctor.nmc_number }}
+            </span>
+          {% endif %}
+        </div>
+        
+        <h3 class="font-extrabold text-base sm:text-lg text-slate-900 group-hover:text-sky-600 transition-colors truncate">
+          {{ doctor.user.full_name }}
+        </h3>
+        
+        <p class="text-xs text-slate-500 truncate mt-0.5">
+          {{ doctor.qualifications }}
+        </p>
+      </div>
+    </div>
+
+    <!-- Doctor Experience & Telehealth tag -->
+    <div class="flex items-center gap-3 text-xs text-slate-500 pt-2 border-t border-slate-100">
+      <div class="flex items-center gap-1">
+        <i data-lucide="award" class="w-3.5 h-3.5 text-sky-600"></i>
+        <span>{{ doctor.experience_years }} yrs experience</span>
+      </div>
+      {% if doctor.is_available_for_telemed %}
+      <span>•</span>
+      <div class="flex items-center gap-1 text-teal-700 font-medium">
+        <i data-lucide="video" class="w-3.5 h-3.5 text-teal-600"></i>
+        <span>Video Available</span>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Transparent Pricing Matrix -->
+    <div class="grid grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl text-xs">
+      <div>
+        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Clinic Visit</span>
+        <span class="font-extrabold text-slate-800 text-sm">NPR {{ doctor.fee_physical|floatformat:0 }}</span>
+      </div>
+      <div class="border-l border-slate-200/80 pl-3">
+        <span class="text-[10px] uppercase font-bold text-slate-400 block tracking-wider">Video Call</span>
+        <span class="font-extrabold text-teal-700 text-sm">NPR {{ doctor.fee_video|floatformat:0 }}</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bottom Action Card -->
+  <div class="p-4 sm:p-5 pt-0">
+    <a href="{% url 'doctor_detail' doctor.slug %}" class="btn btn-primary btn-sm w-full rounded-xl font-bold shadow-md shadow-sky-600/20 flex items-center justify-center gap-2">
+      <i data-lucide="calendar" class="w-4 h-4"></i>
+      <span>Select Slot & Profile</span>
+    </a>
+  </div>
+</div>

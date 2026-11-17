@@ -1,2 +1,26 @@
--r requirements/development.txt
+# Django Core & Database
+django>=5.0,<5.2
+psycopg2-binary>=2.9.9
+dj-database-url>=2.1.0
+python-dotenv>=1.0.1
 
+# Django REST Framework & Swagger (OpenAPI)
+djangorestframework>=3.14.0
+djangorestframework-simplejwt>=5.3.1
+drf-spectacular>=0.27.1
+
+# Authentication & Social Auth
+django-allauth>=0.61.1
+
+# Background Tasks & Cache
+celery>=5.3.6
+redis>=5.0.1
+
+# Cloud Storage & Third-Party Integrations
+Pillow>=10.0.0
+cloudinary>=1.39.0
+django-cloudinary-storage>=0.3.0
+requests>=2.31.0
+
+# Development & Testing
+django-extensions>=3.2.3

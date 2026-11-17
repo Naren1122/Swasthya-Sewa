@@ -1,0 +1,15 @@
+<div class="card bg-white border border-dashed border-slate-300 rounded-3xl p-8 sm:p-12 text-center flex flex-col items-center justify-center max-w-lg mx-auto shadow-sm">
+  <div class="w-16 h-16 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center mb-4 border border-sky-100 shadow-sm">
+    <i data-lucide="{{ icon|default:'calendar-x' }}" class="w-8 h-8"></i>
+  </div>
+  
+  <h4 class="text-base sm:text-lg font-bold text-slate-900">{{ title|default:"No records found" }}</h4>
+  <p class="text-xs sm:text-sm text-slate-500 max-w-sm mt-1.5 leading-relaxed">{{ message|default:"You have no items in this section right now." }}</p>
+  
+  {% if cta_url %}
+  <a href="{{ cta_url }}" class="btn btn-primary btn-sm rounded-xl mt-6 font-semibold shadow-md shadow-sky-600/20 px-5 gap-2">
+    {% if cta_icon %}<i data-lucide="{{ cta_icon }}" class="w-4 h-4"></i>{% endif %}
+    <span>{{ cta_label|default:"Get Started" }}</span>
+  </a>
+  {% endif %}
+</div>

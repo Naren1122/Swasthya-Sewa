@@ -1,0 +1,14 @@
+<button type="{{ type|default:'submit' }}" 
+        class="btn btn-primary {% if full_width %}w-full{% endif %} {{ extra_class|default:'' }} rounded-xl font-semibold shadow-md shadow-sky-600/20 flex items-center justify-center gap-2 transition-all active:scale-[0.99] disabled:opacity-70"
+        {% if id %}id="{{ id }}"{% endif %}
+        {% if hx_indicator %}hx-indicator="{{ hx_indicator }}"{% endif %}>
+  
+  {% if icon %}
+    <i data-lucide="{{ icon }}" class="w-4 h-4"></i>
+  {% endif %}
+  
+  <span>{{ label|default:"Submit" }}</span>
+  
+  <!-- HTMX Loading Spinner Indicator -->
+  <span class="loading loading-spinner loading-sm htmx-indicator hidden" id="btn-spinner"></span>
+</button>

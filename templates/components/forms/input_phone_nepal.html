@@ -1,0 +1,40 @@
+<div class="form-control w-full">
+  {% if label %}
+  <label class="label pb-1.5 pt-0" for="{{ field.id_for_label }}">
+    <span class="label-text font-semibold text-slate-700 text-xs uppercase tracking-wider">{{ label }}</span>
+    {% if required %}<span class="label-text-alt text-rose-500 font-bold ml-1">*</span>{% endif %}
+  </label>
+  {% endif %}
+
+  <!-- Input Group with Fixed +977 Nepal Prefix -->
+  <div class="flex rounded-xl shadow-sm">
+    <span class="inline-flex items-center px-3.5 rounded-l-xl border border-r-0 border-slate-300 bg-slate-100 text-slate-600 text-xs font-semibold select-none gap-1.5">
+      <span>🇳🇵</span>
+      <span>+977</span>
+    </span>
+    
+    <input type="tel"
+           name="{{ field.name }}"
+           id="{{ field.id_for_label }}"
+           value="{{ field.value|default:'' }}"
+           placeholder="98XXXXXXXX"
+           maxlength="10"
+           pattern="^9[78]\d{8}$"
+           {% if required %}required{% endif %}
+           autocomplete="tel-national"
+           class="input input-bordered w-full rounded-l-none rounded-r-xl text-sm transition-all focus:input-primary bg-white text-slate-900 border-slate-300 {% if field.errors %}input-error border-rose-500 focus:input-error{% endif %}">
+  </div>
+
+  {% if field.errors %}
+  <label class="label pt-1 pb-0">
+    <span class="label-text-alt text-rose-600 font-medium text-xs flex items-center gap-1">
+      <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+      {{ field.errors.0 }}
+    </span>
+  </label>
+  {% else %}
+  <label class="label pt-1 pb-0">
+    <span class="label-text-alt text-slate-400 text-[11px]">10-digit mobile number for appointment SMS notifications.</span>
+  </label>
+  {% endif %}
+</div>

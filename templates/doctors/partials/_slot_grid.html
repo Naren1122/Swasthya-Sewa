@@ -1,0 +1,45 @@
+<div class="space-y-4" id="slot-container">
+  
+  {% if slot_data.status == 'SUCCESS' %}
+    <!-- Slot Header with Count Assertion Target -->
+    <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+      <div>
+        <p class="text-xs text-slate-400 font-medium">Availability for {{ target_date|date:"l, M d, Y" }}</p>
+        <h4 class="text-base font-extrabold text-slate-900 mt-0.5">
+          {{ slot_data.available_slots_count }} Available Slot(s)
+        </h4>
+      </div>
+      <span class="badge badge-primary badge-sm text-[11px] font-semibold text-white">
+        {{ doctor.schedules.first.slot_duration_minutes|default:20 }} min / consultation
+      </span>
+    </div>
+
+    <!-- Visual Status Legend -->
+    {% include "components/doctors/slot_legend.html" %}
+
+    <!-- Slot Buttons Grid -->
+    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
+      {% for slot in slot_data.slots %}
+        {% include "components/doctors/slot_button.html" with slot=slot %}
+      {% endfor %}
+    </div>
+
+    {% if slot_data.available_slots_count == 0 %}
+      <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500">
+        All slots for this shift are already booked or have expired. Please pick another date.
+      </div>
+    {% endif %}
+
+  {% elif slot_data.status == 'DOCTOR_ON_LEAVE' %}
+    {% include "components/doctors/leave_alert.html" with message=slot_data.message %}
+
+  {% elif slot_data.status == 'NOT_SCHEDULED' %}
+    {% include "components/doctors/off_shift_alert.html" with message=slot_data.message %}
+
+  {% else %}
+    <div class="alert alert-warning text-xs rounded-2xl">
+      {{ slot_data.message|default:"No schedule information available for this date." }}
+    </div>
+  {% endif %}
+
+</div>

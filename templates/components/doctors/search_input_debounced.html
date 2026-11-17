@@ -1,0 +1,21 @@
+<div class="relative w-full">
+  <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+    <i data-lucide="search" class="w-5 h-5"></i>
+  </span>
+
+  <input type="search"
+         name="q"
+         value="{{ search_query|default:'' }}"
+         placeholder="Search doctors by name, specialty, or qualifications..."
+         hx-get="{% url 'doctor_directory' %}"
+         hx-trigger="keyup changed delay:300ms, search"
+         hx-target="#doctor-grid"
+         hx-include="[name='dept']"
+         hx-indicator="#search-spinner"
+         class="input input-bordered w-full rounded-2xl text-sm pl-11 pr-11 py-3.5 bg-white text-slate-900 border-slate-300 focus:input-primary shadow-sm transition-all">
+
+  <!-- Spinner Indicator -->
+  <span id="search-spinner" class="htmx-indicator absolute inset-y-0 right-0 pr-4 flex items-center text-sky-600">
+    <span class="loading loading-spinner loading-sm"></span>
+  </span>
+</div>

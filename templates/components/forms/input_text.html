@@ -1,0 +1,39 @@
+<div class="form-control w-full">
+  {% if label %}
+  <label class="label pb-1.5 pt-0" for="{{ field.id_for_label }}">
+    <span class="label-text font-semibold text-slate-700 text-xs uppercase tracking-wider">{{ label }}</span>
+    {% if required %}<span class="label-text-alt text-rose-500 font-bold">*</span>{% endif %}
+  </label>
+  {% endif %}
+
+  <div class="relative">
+    {% if icon %}
+    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-400">
+      <i data-lucide="{{ icon }}" class="w-4 h-4"></i>
+    </span>
+    {% endif %}
+
+    <input type="{{ type|default:'text' }}"
+           name="{{ field.name }}"
+           id="{{ field.id_for_label }}"
+           value="{{ field.value|default:'' }}"
+           placeholder="{{ placeholder|default:'' }}"
+           {% if required %}required{% endif %}
+           {% if autofocus %}autofocus{% endif %}
+           autocomplete="{{ autocomplete|default:'on' }}"
+           class="input input-bordered w-full rounded-xl text-sm transition-all focus:input-primary bg-white text-slate-900 border-slate-300 {% if icon %}pl-10{% endif %} {% if field.errors %}input-error border-rose-500 focus:input-error{% endif %}">
+  </div>
+
+  {% if field.errors %}
+  <label class="label pt-1 pb-0">
+    <span class="label-text-alt text-rose-600 font-medium text-xs flex items-center gap-1">
+      <i data-lucide="alert-triangle" class="w-3 h-3"></i>
+      {{ field.errors.0 }}
+    </span>
+  </label>
+  {% elif help_text %}
+  <label class="label pt-1 pb-0">
+    <span class="label-text-alt text-slate-400 text-xs">{{ help_text }}</span>
+  </label>
+  {% endif %}
+</div>

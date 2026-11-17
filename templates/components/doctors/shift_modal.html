@@ -1,0 +1,77 @@
+<!-- DaisyUI Add Shift Modal -->
+<dialog id="add-shift-modal" class="modal modal-bottom sm:modal-middle">
+  <div class="modal-box bg-white rounded-3xl p-6 sm:p-8 max-w-md shadow-2xl border border-slate-200">
+    
+    <!-- Modal Header -->
+    <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+      <div class="flex items-center gap-2.5">
+        <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+          <i data-lucide="calendar-plus" class="w-5 h-5"></i>
+        </div>
+        <div>
+          <h3 class="font-extrabold text-lg text-slate-900 leading-tight">Add Working Shift</h3>
+          <p class="text-xs text-slate-500">Configure your recurring consultation hours</p>
+        </div>
+      </div>
+      <form method="dialog">
+        <button class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
+      </form>
+    </div>
+
+    <!-- Form -->
+    <form method="POST" action="{% url 'doctor_schedule_create' %}" class="space-y-4 mt-5">
+      {% csrf_token %}
+
+      <!-- Day of the Week -->
+      <div class="form-control w-full">
+        <label class="label pb-1.5 pt-0" for="{{ schedule_form.day_of_week.id_for_label }}">
+          <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Day of the Week</span>
+        </label>
+        {{ schedule_form.day_of_week }}
+      </div>
+
+      <!-- Time Interval (Start & End Time) -->
+      <div class="grid grid-cols-2 gap-3">
+        <div class="form-control w-full">
+          <label class="label pb-1.5 pt-0" for="{{ schedule_form.start_time.id_for_label }}">
+            <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Shift Start</span>
+          </label>
+          {{ schedule_form.start_time }}
+        </div>
+        <div class="form-control w-full">
+          <label class="label pb-1.5 pt-0" for="{{ schedule_form.end_time.id_for_label }}">
+            <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Shift End</span>
+          </label>
+          {{ schedule_form.end_time }}
+        </div>
+      </div>
+
+      <!-- Slot Duration -->
+      <div class="form-control w-full">
+        <label class="label pb-1.5 pt-0" for="{{ schedule_form.slot_duration_minutes.id_for_label }}">
+          <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Slot Duration Per Patient</span>
+        </label>
+        {{ schedule_form.slot_duration_minutes }}
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-action pt-2">
+        <form method="dialog">
+          <button type="button" onclick="document.getElementById('add-shift-modal').close()" class="btn btn-ghost btn-sm rounded-xl text-slate-600">
+            Cancel
+          </button>
+        </form>
+        <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold shadow-md shadow-sky-600/20 px-5 gap-2">
+          <i data-lucide="check" class="w-4 h-4"></i>
+          <span>Save Shift</span>
+        </button>
+      </div>
+
+    </form>
+  </div>
+  <form method="dialog" class="modal-backdrop bg-slate-900/40 backdrop-blur-sm">
+    <button>close</button>
+  </form>
+</dialog>

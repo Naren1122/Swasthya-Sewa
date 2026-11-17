@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Find Specialists | Swasthya-Sewa - Doctor Directory{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  
+  <!-- Header Banner -->
+  <div class="mb-8">
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-semibold mb-2">
+      <i data-lucide="stethoscope" class="w-3.5 h-3.5 text-sky-600"></i>
+      <span>Clinical Practitioner Directory</span>
+    </div>
+    <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+      Find Certified Specialist Doctors
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
+      Browse licensed doctors across Nepal. Verify credentials, check live working shift availability, and book your consultation.
+    </p>
+  </div>
+
+  <!-- Search & Filter Controls -->
+  <div class="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-sm space-y-4 mb-8">
+    <!-- Debounced Live Search Bar -->
+    {% include "components/doctors/search_input_debounced.html" with search_query=search_query %}
+
+    <!-- Department / Specialty Pills -->
+    {% include "components/doctors/department_filter_bar.html" with departments=departments selected_dept=selected_dept %}
+  </div>
+
+  <!-- Dynamic Doctor Cards Grid (Replaced by HTMX on search/filter) -->
+  <div id="doctor-grid">
+    {% include "doctors/partials/_doctor_cards.html" with doctors=doctors %}
+  </div>
+
+</div>
+{% endblock %}

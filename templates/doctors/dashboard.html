@@ -1,0 +1,130 @@
+{% extends "base.html" %}
+
+{% block title %}Doctor Clinical Portal | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  
+  {% if doctor %}
+    <!-- Hero Banner -->
+    <div class="bg-gradient-to-r from-sky-700 via-sky-600 to-teal-700 rounded-3xl p-6 sm:p-8 text-white shadow-xl mb-8 relative overflow-hidden">
+      <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+        <div class="space-y-2">
+          <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-white">
+            <i data-lucide="shield-check" class="w-3.5 h-3.5 text-emerald-300"></i>
+            <span>NMC Verified Doctor Desk</span>
+          </div>
+
+          <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+            {{ doctor.user.full_name }}
+          </h1>
+
+          <p class="text-xs sm:text-sm text-sky-100 max-w-xl">
+            {{ doctor.department.name }} • License: <span class="font-mono font-bold">{{ doctor.nmc_number }}</span>
+          </p>
+        </div>
+
+        <div class="flex items-center gap-3">
+          <a href="{% url 'doctor_detail' doctor.slug %}" target="_blank" class="btn bg-white hover:bg-slate-50 text-sky-700 border-none font-bold rounded-2xl shadow-md text-xs sm:text-sm px-5 gap-2">
+            <i data-lucide="external-link" class="w-4 h-4 text-sky-600"></i>
+            <span>Preview Public Profile</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- 2-Column Clinical Practice Management Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+      
+      <!-- Left Column: Recurring Weekly Shifts (7 cols) -->
+      <div class="lg:col-span-7 space-y-6">
+        {% include "components/doctors/weekly_schedule_table.html" with schedules=schedules editable=True %}
+      </div>
+
+      <!-- Right Column: Telemed Toggle, Leaves & Published Rates (5 cols) -->
+      <div class="lg:col-span-5 space-y-6">
+        
+        <!-- Virtual Telemedicine 1-Click Switch -->
+        {% include "components/doctors/telemed_toggle.html" with doctor=doctor %}
+
+        <!-- Upcoming Leaves Card with Self-Service Modal Trigger -->
+        <div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-4">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center gap-2">
+              <div class="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
+                <i data-lucide="calendar-off" class="w-4 h-4"></i>
+              </div>
+              <div>
+                <h3 class="font-extrabold text-base text-slate-900">Out of Office</h3>
+                <p class="text-[11px] text-slate-400">Scheduled leaves & vacations</p>
+              </div>
+            </div>
+            <button type="button" 
+                    onclick="document.getElementById('add-leave-modal').showModal()" 
+                    class="btn btn-warning btn-xs sm:btn-sm rounded-xl font-bold text-white shadow-sm gap-1.5">
+              <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+              <span>Declare Leave</span>
+            </button>
+          </div>
+
+          {% if leaves %}
+            <ul class="divide-y divide-slate-100 text-xs">
+              {% for leave in leaves %}
+                <li class="py-3 flex items-start justify-between">
+                  <div>
+                    <span class="font-bold text-slate-800">{{ leave.leave_date|date:"l, M d, Y" }}</span>
+                    <p class="text-slate-400 mt-0.5">{{ leave.reason|default:"Personal Leave" }}</p>
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <span class="badge badge-ghost badge-sm text-amber-700 font-medium">On Leave</span>
+                    <form method="POST" action="{% url 'doctor_leave_delete' leave.id %}" onsubmit="return confirm('Cancel this scheduled leave for {{ leave.leave_date|date:'M d, Y' }}?');" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-ghost btn-circle btn-xs text-rose-500 hover:bg-rose-50" title="Cancel leave">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </form>
+                  </div>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <div class="p-6 text-center text-xs text-slate-400 space-y-1">
+              <i data-lucide="calendar-check" class="w-8 h-8 mx-auto text-emerald-500 mb-2"></i>
+              <p class="font-semibold text-slate-700">No Upcoming Leaves</p>
+              <p>Your availability follows your regular weekly shift hours.</p>
+            </div>
+          {% endif %}
+        </div>
+
+        <!-- Consultation Pricing Summary -->
+        <div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm space-y-3">
+          <h4 class="font-extrabold text-xs uppercase tracking-wider text-slate-400">Published Rates</h4>
+          <div class="flex items-center justify-between py-2 border-b border-slate-100 text-xs">
+            <span class="text-slate-600">Physical Hospital Consultation</span>
+            <span class="font-extrabold text-slate-900">NPR {{ doctor.fee_physical|floatformat:0 }}</span>
+          </div>
+          <div class="flex items-center justify-between py-2 text-xs">
+            <span class="text-slate-600">HD Video Teleconsultation</span>
+            <span class="font-extrabold text-teal-700">NPR {{ doctor.fee_video|floatformat:0 }}</span>
+          </div>
+          <p class="text-[11px] text-slate-400 pt-1 italic">
+            Consultation fee adjustments are managed in coordination with hospital administration.
+          </p>
+        </div>
+
+      </div>
+
+    </div>
+
+    <!-- Modals for Shift & Leave Creation -->
+    {% include "components/doctors/shift_modal.html" %}
+    {% include "components/doctors/leave_modal.html" %}
+
+  {% else %}
+    <div class="py-12">
+      {% include "components/cards/empty_state.html" with title="Doctor Profile Not Found" message="Your account is not linked to a verified Doctor Profile. Please contact the hospital administrator." cta_url="/admin/" cta_label="Admin Panel" cta_icon="shield" icon="alert-octagon" %}
+    </div>
+  {% endif %}
+
+</div>
+{% endblock %}

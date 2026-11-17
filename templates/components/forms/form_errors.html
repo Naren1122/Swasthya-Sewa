@@ -1,0 +1,10 @@
+{% if errors %}
+<div class="alert alert-error bg-rose-50 border border-rose-200 text-rose-800 rounded-xl p-3.5 text-xs shadow-sm flex items-start gap-2.5">
+  <i data-lucide="alert-circle" class="w-4 h-4 text-rose-600 flex-shrink-0 mt-0.5"></i>
+  <div class="flex-1">
+    {% for error in errors %}
+      <p class="font-medium">{{ error }}</p>
+    {% endfor %}
+  </div>
+</div>
+{% endif %}

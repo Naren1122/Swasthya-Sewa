@@ -1,0 +1,31 @@
+<!-- Top Progress Bar for HTMX Requests -->
+<div id="htmx-page-loader" class="fixed top-0 left-0 right-0 h-1 z-50 overflow-hidden pointer-events-none hidden">
+  <div class="h-full bg-gradient-to-r from-sky-500 via-teal-400 to-sky-600 animate-[loader-bar_1.2s_infinite_linear] origin-left"></div>
+</div>
+
+<style>
+  @keyframes loader-bar {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(20%); }
+    100% { transform: translateX(100%); }
+  }
+  .htmx-request#htmx-page-loader,
+  .htmx-request #htmx-page-loader {
+    display: block !important;
+  }
+</style>
+
+<script>
+  document.addEventListener('htmx:configRequest', () => {
+    const el = document.getElementById('htmx-page-loader');
+    if (el) el.classList.remove('hidden');
+  });
+  document.addEventListener('htmx:afterOnLoad', () => {
+    const el = document.getElementById('htmx-page-loader');
+    if (el) el.classList.add('hidden');
+  });
+  document.addEventListener('htmx:responseError', () => {
+    const el = document.getElementById('htmx-page-loader');
+    if (el) el.classList.add('hidden');
+  });
+</script>

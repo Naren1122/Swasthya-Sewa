@@ -1,0 +1,86 @@
+<div class="drawer-side z-50 lg:hidden">
+  <label for="main-drawer" aria-label="close sidebar" class="drawer-overlay"></label>
+  
+  <aside class="p-6 w-80 min-h-full bg-white text-slate-800 flex flex-col justify-between shadow-2xl border-r border-slate-200">
+    <div>
+      <!-- Drawer Header with Brand & Close Button -->
+      <div class="flex items-center justify-between pb-6 border-b border-slate-100">
+        <a href="{% url 'home' %}" class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center shadow-md shadow-sky-600/30">
+            <i data-lucide="cross" class="w-4 h-4 fill-white"></i>
+          </div>
+          <span class="font-extrabold text-base tracking-tight text-slate-900">
+            Swasthya<span class="text-sky-600">Sewa</span>
+          </span>
+        </a>
+        <label for="main-drawer" class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </label>
+      </div>
+
+      <!-- User Info Card if Authenticated -->
+      {% if user.is_authenticated %}
+      <div class="my-4 p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-sky-600 text-white font-bold flex items-center justify-center text-sm shadow-sm">
+          {{ user.full_name|default:user.email|slice:":2"|upper }}
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="font-bold text-sm text-slate-900 truncate">{{ user.full_name|default:"User" }}</span>
+          <span class="text-xs text-slate-400 truncate">{{ user.email }}</span>
+        </div>
+      </div>
+      {% endif %}
+
+      <!-- Navigation Links -->
+      <ul class="menu p-0 mt-4 space-y-1 text-sm font-medium">
+        <li>
+          <a href="{% url 'home' %}" class="flex items-center gap-3 py-3 text-slate-700 hover:text-sky-600 hover:bg-sky-50 rounded-xl">
+            <i data-lucide="home" class="w-5 h-5 text-slate-400"></i>
+            <span>Home</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'doctor_directory' %}" class="flex items-center gap-3 py-3 text-slate-700 hover:text-sky-600 hover:bg-sky-50 rounded-xl">
+            <i data-lucide="stethoscope" class="w-5 h-5 text-slate-400"></i>
+            <span>Find Doctors</span>
+          </a>
+        </li>
+        <li>
+          <a href="{% url 'doctor_directory' %}" class="flex items-center gap-3 py-3 text-slate-700 hover:text-sky-600 hover:bg-sky-50 rounded-xl">
+            <i data-lucide="grid" class="w-5 h-5 text-slate-400"></i>
+            <span>Medical Specialties</span>
+          </a>
+        </li>
+        <li>
+          <a href="tel:102" class="flex items-center gap-3 py-3 text-rose-700 bg-rose-50/70 hover:bg-rose-100 rounded-xl">
+            <i data-lucide="phone-call" class="w-5 h-5 text-rose-600 animate-pulse"></i>
+            <span>Emergency Ambulance (102)</span>
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <!-- Drawer Footer Actions -->
+    <div class="pt-6 border-t border-slate-100 space-y-2">
+      {% if user.is_authenticated %}
+        <form method="POST" action="{% url 'logout' %}">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-outline btn-error btn-sm w-full rounded-xl flex items-center justify-center gap-2">
+            <i data-lucide="log-out" class="w-4 h-4"></i>
+            <span>Sign Out</span>
+          </button>
+        </form>
+      {% else %}
+        <a href="{% url 'login' %}" class="btn btn-outline btn-primary btn-sm w-full rounded-xl">
+          Sign In
+        </a>
+        <a href="{% url 'signup' %}" class="btn btn-primary btn-sm w-full rounded-xl shadow-sm text-white">
+          Create Patient Account
+        </a>
+      {% endif %}
+      <p class="text-[11px] text-center text-slate-400 pt-2">
+        Swasthya-Sewa Nepal • Version 1.0
+      </p>
+    </div>
+  </aside>
+</div>

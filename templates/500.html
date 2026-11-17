@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}500 - Server Error | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full text-center">
+    
+    <div class="w-20 h-20 rounded-3xl bg-rose-50 text-rose-600 flex items-center justify-center mx-auto mb-6 border border-rose-100 shadow-sm">
+      <i data-lucide="alert-octagon" class="w-10 h-10"></i>
+    </div>
+
+    <span class="badge badge-error text-white font-mono text-xs uppercase tracking-widest px-3 py-2">
+      Server Error 500
+    </span>
+
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
+      Something went wrong
+    </h1>
+    <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+      Our technical team has been automatically alerted and is examining the issue. Your personal health records and appointments remain completely safe.
+    </p>
+
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="{% url 'home' %}" class="btn btn-primary btn-sm rounded-xl px-5 w-full sm:w-auto shadow-sm gap-2">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        <span>Return to Home</span>
+      </a>
+      <button onclick="window.location.reload()" class="btn btn-outline btn-sm rounded-xl px-5 w-full sm:w-auto gap-2">
+        <i data-lucide="rotate-cw" class="w-4 h-4"></i>
+        <span>Retry Page</span>
+      </button>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

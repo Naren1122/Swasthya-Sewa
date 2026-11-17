@@ -1,0 +1,17 @@
+/* Swasthya-Sewa Custom Styles & Utility Fixes */
+
+/* Guarantee that mobile drawer overlay is completely dormant when closed */
+.drawer-toggle:not(:checked) ~ .drawer-side {
+  pointer-events: none !important;
+  visibility: hidden !important;
+}
+
+.drawer-toggle:checked ~ .drawer-side {
+  pointer-events: auto !important;
+  visibility: visible !important;
+}
+
+/* Smooth transitions */
+html {
+  scroll-behavior: smooth;
+}

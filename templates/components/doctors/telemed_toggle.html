@@ -1,0 +1,32 @@
+<div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center flex-shrink-0">
+      <i data-lucide="video" class="w-5 h-5"></i>
+    </div>
+    <div>
+      <h4 class="font-bold text-sm text-slate-900">Virtual Telemedicine</h4>
+      <p class="text-xs text-slate-500">
+        {% if doctor.is_available_for_telemed %}
+          Currently accepting encrypted HD video consultations.
+        {% else %}
+          Video consultations are paused. Only hospital visits open.
+        {% endif %}
+      </p>
+    </div>
+  </div>
+
+  <form method="POST" action="{% url 'doctor_telemed_toggle' %}">
+    {% csrf_token %}
+    <button type="submit" 
+            class="btn btn-sm rounded-xl font-bold gap-2 {% if doctor.is_available_for_telemed %}btn-success text-white shadow-md shadow-emerald-600/20{% else %}btn-outline border-slate-300 text-slate-600{% endif %}"
+            title="Click to toggle telemedicine status">
+      {% if doctor.is_available_for_telemed %}
+        <span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+        <span>Active</span>
+      {% else %}
+        <span class="w-2 h-2 rounded-full bg-slate-400"></span>
+        <span>Paused</span>
+      {% endif %}
+    </button>
+  </form>
+</div>

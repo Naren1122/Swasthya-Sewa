@@ -1,0 +1,11 @@
+{% if doctors %}
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    {% for doctor in doctors %}
+      {% include "components/doctors/doctor_card.html" with doctor=doctor %}
+    {% endfor %}
+  </div>
+{% else %}
+  <div class="col-span-full py-12">
+    {% include "components/cards/empty_state.html" with title="No Doctors Found" message="We couldn't find any certified doctors matching your current specialty or search query. Try clearing your filters." cta_url="/doctors/" cta_label="Clear All Filters" cta_icon="rotate-ccw" icon="user-x" %}
+  </div>
+{% endif %}

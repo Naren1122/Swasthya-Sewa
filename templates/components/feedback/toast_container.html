@@ -1,0 +1,8 @@
+<!-- Toast Notification Container (Django Messages + HTMX OOB) -->
+<div id="toast-container" class="toast toast-end toast-bottom z-50 p-4 space-y-2 pointer-events-none max-w-sm w-full">
+  {% if messages %}
+    {% for message in messages %}
+      {% include "components/feedback/toast_item.html" with message=message.message tags=message.tags %}
+    {% endfor %}
+  {% endif %}
+</div>

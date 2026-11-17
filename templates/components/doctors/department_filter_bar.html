@@ -1,0 +1,22 @@
+<div class="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none pt-1">
+  <!-- All Specialties Pill -->
+  <a href="{% url 'doctor_directory' %}"
+     hx-get="{% url 'doctor_directory' %}"
+     hx-target="#doctor-grid"
+     hx-push-url="true"
+     class="btn btn-sm rounded-xl font-semibold flex-shrink-0 transition-all {% if not selected_dept %}btn-primary shadow-sm text-white{% else %}btn-outline border-slate-300 text-slate-700 hover:bg-slate-100{% endif %}">
+    <span>All Specialties</span>
+  </a>
+
+  <!-- Individual Department Pills -->
+  {% for dept in departments %}
+    <a href="{% url 'doctor_directory' %}?dept={{ dept.slug }}"
+       hx-get="{% url 'doctor_directory' %}?dept={{ dept.slug }}"
+       hx-target="#doctor-grid"
+       hx-push-url="true"
+       class="btn btn-sm rounded-xl font-semibold flex-shrink-0 transition-all flex items-center gap-1.5 {% if selected_dept == dept.slug %}btn-primary shadow-sm text-white{% else %}btn-outline border-slate-300 text-slate-700 hover:bg-slate-100{% endif %}">
+      <i data-lucide="{{ dept.icon_name|default:'activity' }}" class="w-3.5 h-3.5"></i>
+      <span>{{ dept.name }}</span>
+    </a>
+  {% endfor %}
+</div>

@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Dashboard | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  
+  <!-- Welcome Hero Header -->
+  <div class="bg-gradient-to-r from-sky-600 to-teal-600 rounded-3xl p-6 sm:p-8 text-white shadow-lg mb-8 relative overflow-hidden">
+    <div class="relative z-10 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-xs font-semibold text-white mb-2">
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300"></i>
+          <span>Patient Portal</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-extrabold tracking-tight">
+          Namaste, {{ user.full_name|default:"Patient" }}! 👋
+        </h1>
+        <p class="text-xs sm:text-sm text-sky-100 mt-1 max-w-xl">
+          Welcome to your health dashboard. Book certified doctors, view appointment statuses, and access your digital consultation history.
+        </p>
+      </div>
+
+      <div class="flex-shrink-0">
+        <a href="{% url 'doctor_directory' %}" class="btn bg-white hover:bg-slate-50 text-sky-700 border-none font-bold rounded-2xl shadow-md text-xs sm:text-sm px-5 gap-2">
+          <i data-lucide="plus-circle" class="w-4 h-4 text-sky-600"></i>
+          <span>Book New Appointment</span>
+        </a>
+      </div>
+    </div>
+
+    <!-- Decorative Medical Watermark -->
+    <div class="absolute right-0 bottom-0 opacity-10 translate-x-10 translate-y-10 pointer-events-none">
+      <i data-lucide="cross" class="w-64 h-64 text-white"></i>
+    </div>
+  </div>
+
+  <!-- Quick Action & Stat Cards (3-column responsive grid) -->
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mb-10">
+    <!-- Stat 1: Upcoming Appointments -->
+    {% include "components/cards/stat_card.html" with title="Upcoming Appointments" value="0" subtitle="Scheduled for this week" action_label="View All" action_url="#" icon="calendar-check" color="sky" %}
+
+    <!-- Stat 2: Active Teleconsultations -->
+    {% include "components/cards/stat_card.html" with title="Video Teleconsultations" value="0" subtitle="HD In-browser video rooms" action_label="How it works" action_url="#" icon="video" color="teal" %}
+
+    <!-- Stat 3: Medical Prescriptions -->
+    {% include "components/cards/stat_card.html" with title="Digital Prescriptions" value="0" subtitle="Stored securely on Cloudinary" action_label="View Records" action_url="#" icon="file-text" color="indigo" %}
+  </div>
+
+  <!-- Appointments Section with Empty State -->
+  <div class="space-y-4">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg sm:text-xl font-bold text-slate-900">Your Medical Appointments</h2>
+        <p class="text-xs text-slate-500">Track and manage your scheduled hospital visits and teleconsultations.</p>
+      </div>
+      <a href="{% url 'doctor_directory' %}" class="text-xs font-bold text-sky-600 hover:text-sky-700 flex items-center gap-1">
+        <span>Find Specialists</span>
+        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+      </a>
+    </div>
+
+    <!-- Appointments Container -->
+    <div class="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-10 shadow-sm">
+      {% if appointments %}
+        <div class="space-y-4">
+          <!-- Populated in Phase 3 -->
+        </div>
+      {% else %}
+        <!-- Friendly Empty State Card -->
+        {% include "components/cards/empty_state.html" with title="No appointments scheduled yet" message="You don't have any upcoming doctor appointments. Search for certified specialists by department and reserve your slot in minutes." cta_url="/doctors/" cta_label="Find a Specialist Doctor" cta_icon="search" icon="calendar-x" %}
+      {% endif %}
+    </div>
+  </div>
+
+</div>
+{% endblock %}

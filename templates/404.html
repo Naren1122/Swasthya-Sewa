@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}404 - Page Not Found | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+  <div class="max-w-md w-full text-center">
+    
+    <div class="w-20 h-20 rounded-3xl bg-sky-50 text-sky-600 flex items-center justify-center mx-auto mb-6 border border-sky-100 shadow-sm">
+      <i data-lucide="compass" class="w-10 h-10 animate-[spin_10s_linear_infinite]"></i>
+    </div>
+
+    <span class="badge badge-primary badge-outline font-mono text-xs uppercase tracking-widest px-3 py-2">
+      Error 404
+    </span>
+
+    <h1 class="text-3xl font-extrabold text-slate-900 tracking-tight mt-3">
+      Page Not Found
+    </h1>
+    <p class="text-sm text-slate-500 mt-2 leading-relaxed">
+      We couldn't find the medical page or doctor profile you were looking for. Perhaps the doctor moved clinics or the link was updated.
+    </p>
+
+    <div class="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
+      <a href="{% url 'home' %}" class="btn btn-primary btn-sm rounded-xl px-5 w-full sm:w-auto shadow-sm gap-2">
+        <i data-lucide="home" class="w-4 h-4"></i>
+        <span>Return Home</span>
+      </a>
+      <a href="{% url 'doctor_directory' %}" class="btn btn-outline btn-sm rounded-xl px-5 w-full sm:w-auto gap-2">
+        <i data-lucide="stethoscope" class="w-4 h-4"></i>
+        <span>Find a Doctor</span>
+      </a>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

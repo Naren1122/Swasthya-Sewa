@@ -1,0 +1,17 @@
+<div id="toast-container" hx-swap-oob="beforeend">
+  <div x-data="{ show: true }" 
+       x-show="show" 
+       x-init="setTimeout(() => show = false, 5000)"
+       x-transition:enter="transition ease-out duration-300"
+       x-transition:enter-start="opacity-0 translate-y-2 scale-95"
+       x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+       class="pointer-events-auto alert alert-error bg-rose-600 text-white shadow-xl border border-rose-700 rounded-2xl flex items-center justify-between text-sm py-3 px-4">
+    <div class="flex items-center gap-2.5">
+      <i data-lucide="alert-octagon" class="w-5 h-5 flex-shrink-0"></i>
+      <span class="font-medium">{{ error_message|default:"A server error occurred. Please try again." }}</span>
+    </div>
+    <button @click="show = false" class="btn btn-ghost btn-circle btn-xs text-white/80 hover:text-white">
+      <i data-lucide="x" class="w-4 h-4"></i>
+    </button>
+  </div>
+</div>

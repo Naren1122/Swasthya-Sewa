@@ -1,0 +1,53 @@
+<div class="dropdown dropdown-end" x-data="{ open: false }">
+  <label tabindex="0" class="btn btn-ghost btn-circle avatar online placeholder border border-slate-200 hover:border-sky-400 transition-colors">
+    <div class="bg-gradient-to-tr from-sky-600 to-teal-500 text-white rounded-full w-9 shadow-sm">
+      <span class="text-xs font-bold uppercase tracking-tight">
+        {{ user.full_name|default:user.email|slice:":2" }}
+      </span>
+    </div>
+  </label>
+  
+  <ul tabindex="0" class="mt-3 z-[60] p-2 shadow-2xl menu menu-sm dropdown-content bg-white rounded-2xl w-60 border border-slate-200 divide-y divide-slate-100">
+    <!-- User Info Header -->
+    <li class="px-3 py-2.5">
+      <div class="flex flex-col gap-0.5 hover:bg-transparent cursor-default p-0">
+        <p class="font-bold text-slate-800 text-sm truncate">{{ user.full_name|default:"User" }}</p>
+        <p class="text-xs text-slate-400 truncate">{{ user.email }}</p>
+        <div class="mt-1.5">
+          {% if user.role == 'DOCTOR' %}
+            <span class="badge badge-accent badge-sm font-semibold text-[10px] uppercase">Doctor</span>
+          {% elif user.is_superuser or user.role == 'ADMIN' %}
+            <span class="badge badge-error badge-sm font-semibold text-[10px] uppercase text-white">Admin</span>
+          {% else %}
+            <span class="badge badge-primary badge-sm font-semibold text-[10px] uppercase text-white">Patient</span>
+          {% endif %}
+        </div>
+      </div>
+    </li>
+
+    <!-- Navigation Links -->
+    <li class="py-1">
+      <a href="{% url 'role_redirect' %}" class="flex items-center gap-2 py-2 text-slate-700 font-medium hover:text-sky-600 rounded-lg">
+        <i data-lucide="layout-dashboard" class="w-4 h-4 text-slate-400"></i>
+        <span>Dashboard</span>
+      </a>
+      {% if user.role == 'PATIENT' %}
+      <a href="{% url 'doctor_directory' %}" class="flex items-center gap-2 py-2 text-slate-700 font-medium hover:text-sky-600 rounded-lg">
+        <i data-lucide="calendar-plus" class="w-4 h-4 text-slate-400"></i>
+        <span>Book Appointment</span>
+      </a>
+      {% endif %}
+    </li>
+
+    <!-- Sign Out Form -->
+    <li class="pt-1">
+      <form method="POST" action="{% url 'logout' %}" class="p-0">
+        {% csrf_token %}
+        <button type="submit" class="w-full text-left flex items-center gap-2 py-2 text-rose-600 font-semibold hover:bg-rose-50 rounded-lg">
+          <i data-lucide="log-out" class="w-4 h-4 text-rose-500"></i>
+          <span>Sign Out</span>
+        </button>
+      </form>
+    </li>
+  </ul>
+</div>

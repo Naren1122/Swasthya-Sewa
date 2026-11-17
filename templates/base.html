@@ -1,94 +1,114 @@
 <!DOCTYPE html>
 <html lang="en" data-theme="light">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}MediCore — Hospital Operations & Patient Care{% endblock %}</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}Swasthya-Sewa | स्वास्थ्य सेवा - Healthcare Booking & Teleconsultation{% endblock %}</title>
+  <meta name="description" content="Production-grade healthcare booking, doctor availability, and teleconsultation platform in Nepal.">
 
-    <!-- Inter & JetBrains Mono Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 
-    <!-- Tailwind CSS v4 + DaisyUI CDN -->
-    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.min.css" rel="stylesheet" type="text/css" />
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
-                        mono: ['JetBrains Mono', 'monospace'],
-                    },
-                    colors: {
-                        brand: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            500: '#0284c7', // Primary Sky/Teal Medical Hue
-                            600: '#0369a1',
-                            700: '#075985',
-                        }
-                    }
-                }
+  <!-- DaisyUI 4 & Tailwind CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.14/dist/full.min.css" rel="stylesheet" type="text/css" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            brand: {
+              50: '#f0f9ff',
+              100: '#e0f2fe',
+              500: '#0ea5e9',
+              600: '#0284c7',
+              700: '#0369a1',
             }
+          }
         }
-    </script>
+      },
+      daisyui: {
+        themes: [
+          {
+            light: {
+              ...require ? {} : {},
+              "primary": "#0284c7",
+              "primary-content": "#ffffff",
+              "secondary": "#0d9488",
+              "accent": "#0ea5e9",
+              "neutral": "#1e293b",
+              "base-100": "#ffffff",
+              "base-200": "#f8fafc",
+              "base-300": "#f1f5f9",
+              "info": "#0284c7",
+              "success": "#059669",
+              "warning": "#d97706",
+              "error": "#e11d48",
+            },
+          },
+        ],
+      },
+    }
+  </script>
 
-    <!-- HTMX v2 + Alpine.js v3 -->
-    <script src="https://unpkg.com/htmx.org@2.0.4/dist/htmx.min.js" defer></script>
-    <script src="https://unpkg.com/alpinejs@3.14.8/dist/cdn.min.js" defer></script>
+  <!-- HTMX 1.9 -->
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 
-    <!-- Lucide Icons -->
-    <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Alpine.js 3 -->
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
 
-    <style>
-        body { font-family: 'Inter', sans-serif; }
-        .htmx-indicator { display: none; }
-        .htmx-request .htmx-indicator { display: inline-flex; }
-        .htmx-request.htmx-indicator { display: inline-flex; }
-    </style>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
 
-    {% block head_extra %}{% endblock %}
+  <!-- App Custom Styles -->
+  <link rel="stylesheet" href="/static/css/app.css">
+  {% block extra_head %}{% endblock %}
 </head>
-<body class="bg-base-100 text-base-content min-h-screen flex flex-col antialiased"
+
+<body class="bg-slate-50 text-slate-800 antialiased min-h-screen flex flex-col font-sans"
       hx-headers='{"X-CSRFToken": "{{ csrf_token }}"}'>
 
-    <!-- Global Toast / Flash Messages -->
-    <div id="messages-container" class="toast toast-top toast-end z-50">
-        {% include "partials/_messages.html" %}
+  <!-- DaisyUI Responsive Drawer Wrapper -->
+  <div class="drawer min-h-screen">
+    <input id="main-drawer" type="checkbox" class="drawer-toggle" />
+    
+    <div class="drawer-content flex flex-col min-h-screen">
+      <!-- Top HTMX Request Progress Indicator -->
+      {% include "components/feedback/page_loader.html" %}
+
+      <!-- Top Sticky Navigation Bar -->
+      {% include "components/navigation/navbar.html" %}
+
+      <!-- Main Content Area -->
+      <main class="flex-grow">
+        {% block content %}{% endblock %}
+      </main>
+
+      <!-- Global Footer -->
+      {% include "components/footer/main_footer.html" %}
     </div>
 
-    <!-- Application Shell Layout -->
-    {% block shell %}
-        <!-- Top Navbar -->
-        {% include "partials/_navbar.html" %}
+    <!-- Mobile Slide-Out Drawer Navigation -->
+    {% include "components/navigation/mobile_drawer.html" %}
+  </div>
 
-        <div class="flex-1 flex overflow-hidden">
-            <!-- Sidebar -->
-            {% if user.is_authenticated %}
-                {% include "partials/_sidebar.html" %}
-            {% endif %}
+  <!-- Global Toast Notification Container for Out-of-Band & Flash Messages -->
+  {% include "components/feedback/toast_container.html" %}
 
-            <!-- Main Content Area -->
-            <main class="flex-1 overflow-y-auto p-4 md:p-6 lg:p-8 bg-slate-50/50">
-                <div class="max-w-7xl mx-auto">
-                    {% block content %}{% endblock %}
-                </div>
-            </main>
-        </div>
-    {% endblock %}
-
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            if (window.lucide) { lucide.createIcons(); }
-        });
-        document.body.addEventListener('htmx:afterSwap', () => {
-            if (window.lucide) { lucide.createIcons(); }
-        });
-    </script>
-    {% block scripts_extra %}{% endblock %}
+  <!-- Icon Initialization & HTMX Re-binding -->
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+    document.body.addEventListener('htmx:afterOnLoad', () => {
+      if (window.lucide) lucide.createIcons();
+    });
+  </script>
+  {% block extra_scripts %}{% endblock %}
 </body>
 </html>
-
