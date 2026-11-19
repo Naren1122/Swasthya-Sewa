@@ -1,0 +1,204 @@
+<!-- Modal Header with Live 10-Minute Hold Timer -->
+<div class="flex items-center justify-between pb-4 border-b border-slate-100">
+  <div class="flex items-center gap-2">
+    <div class="w-9 h-9 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
+      <i data-lucide="shield-check" class="w-5 h-5"></i>
+    </div>
+    <div>
+      <h3 class="font-extrabold text-lg text-slate-900 leading-tight">Checkout & Pay</h3>
+      <p class="text-xs text-slate-400">Lock your slot and select a payment gateway</p>
+    </div>
+  </div>
+  
+  <button type="button" 
+          onclick="document.getElementById('checkout-modal').close()" 
+          class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700">
+    <i data-lucide="x" class="w-5 h-5"></i>
+  </button>
+</div>
+
+<!-- Urgency Banner & Timer -->
+<div class="my-3 flex items-center justify-between gap-3">
+  {% include "components/appointments/countdown_timer.html" with expires_seconds=600 %}
+  <span class="badge badge-success badge-sm font-bold text-white text-[10px] tracking-wider uppercase">
+    Slot Locked
+  </span>
+</div>
+
+<!-- Doctor & Schedule Summary Card -->
+<div class="p-3.5 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-2.5">
+  <div class="flex items-center gap-3">
+    {% if doctor.avatar %}
+      <img src="{{ doctor.avatar.url }}" alt="{{ doctor.user.full_name }}" class="w-11 h-11 rounded-xl object-cover border border-slate-200" />
+    {% else %}
+      <div class="w-11 h-11 rounded-xl bg-sky-600 text-white font-extrabold text-sm flex items-center justify-center shadow-sm">
+        {{ doctor.user.full_name|slice:":2"|upper }}
+      </div>
+    {% endif %}
+    <div class="min-w-0 flex-1">
+      <div class="flex items-center gap-1.5">
+        <span class="badge badge-primary badge-outline text-[10px] font-bold">{{ doctor.department.name }}</span>
+        <span class="text-[10px] font-semibold text-slate-400">NMC #{{ doctor.nmc_number }}</span>
+      </div>
+      <h4 class="font-bold text-slate-900 text-sm truncate mt-0.5">{{ doctor.user.full_name }}</h4>
+    </div>
+  </div>
+
+  <div class="pt-2 border-t border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+    <div>
+      <span class="text-slate-400 uppercase font-semibold text-[10px] block">Date</span>
+      <span class="font-bold text-slate-800">{{ appointment.appointment_date|date:"l, M d, Y" }}</span>
+    </div>
+    <div>
+      <span class="text-slate-400 uppercase font-semibold text-[10px] block">Time Window</span>
+      <span class="font-bold text-slate-800 font-mono">{{ appointment.start_time|time:"g:i A" }} – {{ appointment.end_time|time:"g:i A" }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Form Posting to Payment Dispatcher -->
+<form action="{% url 'payment_initiate' appointment.id %}"
+      method="POST"
+      x-data="{
+        mode: '{{ appointment.consultation_type }}',
+        gateway: 'ESEWA',
+        feePhysical: {{ doctor.fee_physical|floatformat:0 }},
+        feeVideo: {{ doctor.fee_video|floatformat:0 }}
+      }"
+      class="space-y-4 pt-1">
+  {% csrf_token %}
+
+  <!-- Consultation Mode Selection -->
+  <div class="space-y-1.5">
+    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      Consultation Mode
+    </label>
+    <div class="grid grid-cols-2 gap-2">
+      <!-- Physical Visit Option -->
+      <label class="cursor-pointer border rounded-2xl p-3 flex flex-col gap-1 transition-all"
+             :class="mode === 'PHYSICAL' ? 'border-sky-600 bg-sky-50/50 ring-2 ring-sky-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="building-2" class="w-4 h-4 text-sky-600"></i>
+            <span class="text-xs font-bold text-slate-800">Clinic Visit</span>
+          </div>
+          <input type="radio" name="consultation_type" value="PHYSICAL" x-model="mode" class="radio radio-primary radio-xs" />
+        </div>
+        <span class="text-xs font-extrabold text-slate-900 mt-1">NPR {{ doctor.fee_physical|floatformat:0 }}</span>
+      </label>
+
+      <!-- Telemed Video Option -->
+      {% if doctor.is_available_for_telemed %}
+      <label class="cursor-pointer border rounded-2xl p-3 flex flex-col gap-1 transition-all"
+             :class="mode === 'TELEMEDICINE' ? 'border-teal-600 bg-teal-50/50 ring-2 ring-teal-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-1.5">
+            <i data-lucide="video" class="w-4 h-4 text-teal-600"></i>
+            <span class="text-xs font-bold text-slate-800">Video Call</span>
+          </div>
+          <input type="radio" name="consultation_type" value="TELEMEDICINE" x-model="mode" class="radio radio-secondary radio-xs" />
+        </div>
+        <span class="text-xs font-extrabold text-teal-700 mt-1">NPR {{ doctor.fee_video|floatformat:0 }}</span>
+      </label>
+      {% else %}
+      <div class="border border-dashed border-slate-200 rounded-2xl p-3 bg-slate-50 opacity-60 cursor-not-allowed">
+        <div class="flex items-center gap-1.5 text-slate-400">
+          <i data-lucide="video-off" class="w-4 h-4"></i>
+          <span class="text-xs font-semibold">Video Call</span>
+        </div>
+        <span class="text-[10px] text-slate-400 block mt-1">Not available</span>
+      </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Payment Gateway Selection -->
+  <div class="space-y-1.5">
+    <label class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      Select Payment Method
+    </label>
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-2">
+      <!-- eSewa Wallet -->
+      <label class="cursor-pointer border rounded-2xl p-3 flex flex-col gap-1 transition-all"
+             :class="gateway === 'ESEWA' ? 'border-emerald-600 bg-emerald-50/60 ring-2 ring-emerald-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-emerald-800">eSewa</span>
+          <input type="radio" name="gateway" value="ESEWA" x-model="gateway" class="radio radio-success radio-xs" />
+        </div>
+        <span class="text-[10px] text-slate-500 mt-0.5">Instant Wallet</span>
+      </label>
+
+      <!-- Khalti Wallet -->
+      <label class="cursor-pointer border rounded-2xl p-3 flex flex-col gap-1 transition-all"
+             :class="gateway === 'KHALTI' ? 'border-purple-600 bg-purple-50/60 ring-2 ring-purple-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-purple-800">Khalti</span>
+          <input type="radio" name="gateway" value="KHALTI" x-model="gateway" class="radio radio-primary radio-xs" />
+        </div>
+        <span class="text-[10px] text-slate-500 mt-0.5">UPI / Cards / Web</span>
+      </label>
+
+      <!-- Cash on Arrival (Physical only) -->
+      <label class="cursor-pointer border rounded-2xl p-3 flex flex-col gap-1 transition-all"
+             :class="gateway === 'CASH_ON_ARRIVAL' ? 'border-sky-600 bg-sky-50/60 ring-2 ring-sky-500/20' : 'border-slate-200 hover:border-slate-300 bg-white'"
+             x-show="mode === 'PHYSICAL'">
+        <div class="flex items-center justify-between">
+          <span class="text-xs font-bold text-slate-800">Pay at Desk</span>
+          <input type="radio" name="gateway" value="CASH_ON_ARRIVAL" x-model="gateway" class="radio radio-info radio-xs" />
+        </div>
+        <span class="text-[10px] text-slate-500 mt-0.5">Cash on Arrival</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Symptoms / Pre-Consultation Reason -->
+  <div class="space-y-1">
+    <label for="id_patient_notes" class="block text-xs font-bold uppercase tracking-wider text-slate-700">
+      Symptoms / Reason for Visit <span class="text-slate-400 normal-case font-normal">(Optional)</span>
+    </label>
+    <textarea id="id_patient_notes"
+              name="patient_notes"
+              rows="2"
+              placeholder="e.g. Mild chest pain after exercise, headache for 2 days..."
+              class="textarea textarea-bordered w-full rounded-2xl text-xs sm:text-sm focus:textarea-primary bg-white text-slate-900 border-slate-300 placeholder:text-slate-400">{{ appointment.patient_notes }}</textarea>
+  </div>
+
+  <!-- Fee Summary Breakdown -->
+  <div class="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl space-y-1.5 text-xs">
+    <div class="flex items-center justify-between text-slate-500">
+      <span>Consultation Fee:</span>
+      <span class="font-bold text-slate-800" x-text="'NPR ' + (mode === 'TELEMEDICINE' ? feeVideo : feePhysical)">
+        NPR {{ appointment.fee|floatformat:0 }}
+      </span>
+    </div>
+    <div class="flex items-center justify-between text-slate-500">
+      <span>Platform Service Fee:</span>
+      <span class="text-emerald-600 font-bold">FREE (Waived)</span>
+    </div>
+    <div class="flex items-center justify-between pt-2 border-t border-slate-200/80 text-sm">
+      <span class="font-extrabold text-slate-900">Total Payable:</span>
+      <span class="font-extrabold text-sky-700 text-base" x-text="'NPR ' + (mode === 'TELEMEDICINE' ? feeVideo : feePhysical)">
+        NPR {{ appointment.fee|floatformat:0 }}
+      </span>
+    </div>
+  </div>
+
+  <!-- Action CTAs -->
+  <div class="modal-action flex items-center justify-between gap-3 pt-1">
+    <!-- Release Slot Hold -->
+    <button type="button"
+            hx-post="{% url 'appointment_cancel_hold' appointment.id %}"
+            hx-target="#checkout-modal-container"
+            hx-swap="innerHTML"
+            class="btn btn-ghost btn-sm text-slate-500 hover:text-rose-600 rounded-xl">
+      Release Slot
+    </button>
+
+    <!-- Proceed to Payment Button -->
+    <button type="submit"
+            class="btn btn-primary btn-sm rounded-xl font-bold shadow-md shadow-sky-600/20 px-6 gap-2">
+      <span x-text="gateway === 'CASH_ON_ARRIVAL' ? 'Confirm & Pay at Desk' : 'Proceed to Payment'">Proceed to Payment</span>
+      <i data-lucide="arrow-right" class="w-4 h-4"></i>
+    </button>
+  </div>
+</form>

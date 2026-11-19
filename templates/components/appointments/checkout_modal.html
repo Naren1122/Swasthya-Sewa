@@ -1,0 +1,26 @@
+<!-- DaisyUI 10-Minute Hold Checkout Modal Shell -->
+<dialog id="checkout-modal" class="modal modal-bottom sm:modal-middle">
+  <div id="checkout-modal-container" class="modal-box bg-white rounded-3xl p-6 sm:p-8 max-w-lg shadow-2xl border border-slate-200">
+    <!-- Dynamic Content Swapped in via HTMX on Slot Click -->
+    <div class="py-8 text-center text-slate-400">
+      <span class="loading loading-spinner loading-md text-sky-600"></span>
+      <p class="text-xs mt-2 font-medium">Securing appointment slot...</p>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop bg-slate-900/50">
+    <button>close</button>
+  </form>
+</dialog>
+
+<script>
+  // Automatically open the modal when HTMX loads content into #checkout-modal-container
+  document.body.addEventListener('htmx:afterSwap', function(evt) {
+    if (evt.detail.target.id === 'checkout-modal-container') {
+      const modal = document.getElementById('checkout-modal');
+      if (modal && typeof modal.showModal === 'function') {
+        modal.showModal();
+        if (window.lucide) lucide.createIcons();
+      }
+    }
+  });
+</script>

@@ -1,0 +1,27 @@
+<div x-data="{
+       timeLeft: {{ expires_seconds|default:600 }},
+       timerText: '10:00',
+       init() {
+         this.updateDisplay();
+         let interval = setInterval(() => {
+           if (this.timeLeft > 0) {
+             this.timeLeft--;
+             this.updateDisplay();
+           } else {
+             clearInterval(interval);
+             this.timerText = 'Expired';
+           }
+         }, 1000);
+       },
+       updateDisplay() {
+         let minutes = Math.floor(this.timeLeft / 60);
+         let seconds = this.timeLeft % 60;
+         this.timerText = (minutes < 10 ? '0' : '') + minutes + ':' + (seconds < 10 ? '0' : '') + seconds;
+       }
+     }"
+     class="flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 border border-amber-200/90 rounded-xl text-amber-900 text-xs font-semibold shadow-sm">
+  
+  <i data-lucide="timer" class="w-4 h-4 text-amber-600 animate-pulse"></i>
+  <span>Hold Expires In:</span>
+  <span class="font-mono font-extrabold text-sm text-amber-700 tracking-wider" x-text="timerText">10:00</span>
+</div>

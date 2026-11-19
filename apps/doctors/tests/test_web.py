@@ -56,12 +56,16 @@ class DoctorWebTests(TestCase):
         self.assertNotContains(response, '<!DOCTYPE html>')
 
     def test_doctor_detail_page_loads_via_seo_slug(self):
-        """Verify GET /doctors/{slug}/ loads profile and schedule."""
+        """Verify GET /doctors/{slug}/ loads profile, schedule, and 7-day upcoming strip."""
         response = self.client.get(reverse('doctor_detail', kwargs={'slug': self.doctor.slug}))
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, 'Dr. Binod Karki')
         self.assertContains(response, '44332')
         self.assertContains(response, 'Select Slot')
+        self.assertContains(response, 'Upcoming Days')
+        self.assertContains(response, 'Next 7 Days')
+        self.assertEqual(len(response.context['upcoming_days']), 7)
+        self.assertIsNotNone(response.context['target_date'])
 
     def test_doctor_slots_htmx_partial_endpoint(self):
         """Verify HTMX call to /doctors/{slug}/slots/?date=... swaps slot grid."""

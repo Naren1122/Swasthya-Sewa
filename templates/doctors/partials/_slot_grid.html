@@ -4,7 +4,7 @@
     <!-- Slot Header with Count Assertion Target -->
     <div class="flex items-center justify-between pb-2 border-b border-slate-100">
       <div>
-        <p class="text-xs text-slate-400 font-medium">Availability for {{ target_date|date:"l, M d, Y" }}</p>
+        <p class="text-xs text-slate-400 font-medium">Availability for {{ target_date|date:"l, M d, Y"|default:slot_data.date }}</p>
         <h4 class="text-base font-extrabold text-slate-900 mt-0.5">
           {{ slot_data.available_slots_count }} Available Slot(s)
         </h4>

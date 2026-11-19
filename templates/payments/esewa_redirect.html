@@ -1,0 +1,77 @@
+{% extends "base.html" %}
+
+{% block title %}Connecting to eSewa... | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="min-h-[70vh] flex items-center justify-center px-4 py-12">
+  <div class="max-w-md w-full bg-white rounded-3xl border border-slate-200/90 p-8 shadow-xl text-center space-y-6">
+    
+    <!-- Gateway Brand Header -->
+    <div class="flex items-center justify-center gap-3">
+      <div class="w-14 h-14 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center shadow-sm">
+        <i data-lucide="shield-check" class="w-8 h-8"></i>
+      </div>
+      <div class="text-left">
+        <span class="text-[11px] font-bold uppercase tracking-wider text-emerald-700 block">eSewa ePPS Portal</span>
+        <h2 class="text-xl font-extrabold text-slate-900 leading-tight">Secure Payment Gateway</h2>
+      </div>
+    </div>
+
+    <!-- Spinner & Redirect Notice -->
+    <div class="py-4 space-y-3">
+      <span class="loading loading-spinner loading-lg text-emerald-600"></span>
+      <h3 class="text-base font-bold text-slate-800">Connecting to eSewa...</h3>
+      <p class="text-xs text-slate-400">
+        You are being redirected to eSewa's encrypted payment portal to authorize your consultation fee.
+      </p>
+    </div>
+
+    <!-- Payment Summary Box -->
+    <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs space-y-1.5 text-left">
+      <div class="flex items-center justify-between text-slate-500">
+        <span>Consultation:</span>
+        <span class="font-bold text-slate-800">{{ doctor_name }}</span>
+      </div>
+      <div class="flex items-center justify-between text-slate-500">
+        <span>Payment Method:</span>
+        <span class="font-bold text-emerald-700 flex items-center gap-1">
+          <span class="w-2 h-2 rounded-full bg-emerald-500"></span> eSewa Digital Wallet
+        </span>
+      </div>
+      <div class="flex items-center justify-between pt-2 border-t border-slate-200 text-sm">
+        <span class="font-extrabold text-slate-900">Total Payable:</span>
+        <span class="font-extrabold text-emerald-700 text-base">NPR {{ amount|floatformat:0 }}</span>
+      </div>
+    </div>
+
+    <p class="text-[11px] text-slate-400">
+      Please do not refresh this page or close your browser window.
+    </p>
+
+    <!-- Auto-submitting Hidden Form -->
+    <form id="esewa-form" action="{{ action_url }}" method="POST">
+      {% for name, value in fields.items %}
+        <input type="hidden" name="{{ name }}" value="{{ value }}">
+      {% endfor %}
+      <noscript>
+        <button type="submit" class="btn btn-success text-white w-full rounded-2xl mt-4">
+          Click to Proceed to eSewa
+        </button>
+      </noscript>
+    </form>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  // Auto-submit form immediately after DOM loads
+  document.addEventListener('DOMContentLoaded', function() {
+    const form = document.getElementById('esewa-form');
+    if (form) {
+      form.submit();
+    }
+  });
+</script>
+{% endblock %}

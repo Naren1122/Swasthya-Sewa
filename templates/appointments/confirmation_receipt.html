@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Appointment Receipt #{{ appointment.id|stringformat:".8s"|upper }} | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+  
+  <!-- Breadcrumb Navigation -->
+  <nav class="text-xs text-slate-400 flex items-center gap-2 mb-6 print:hidden">
+    <a href="{% url 'home' %}" class="hover:text-sky-600">Home</a>
+    <span>/</span>
+    <a href="{% url 'patient_bookings' %}" class="hover:text-sky-600">My Consultations</a>
+    <span>/</span>
+    <span class="text-slate-700 font-semibold font-mono">REF #{{ appointment.id|stringformat:".8s"|upper }}</span>
+  </nav>
+
+  <!-- Atomic Receipt Card Component -->
+  {% include "components/appointments/receipt_card.html" with appointment=appointment doctor=doctor %}
+
+</div>
+{% endblock %}

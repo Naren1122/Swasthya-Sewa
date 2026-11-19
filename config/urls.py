@@ -23,6 +23,8 @@ urlpatterns = [
     # Domain REST API v1 Routes
     path('api/v1/auth/', include('apps.accounts.api.urls')),
     path('api/v1/', include('apps.doctors.api.urls')),
+    path('api/v1/', include('apps.appointments.api.urls')),
+    path('api/v1/', include('apps.payments.api.urls')),
 
     # REST API Documentation (Swagger / OpenAPI)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -30,6 +32,12 @@ urlpatterns = [
 
     # Doctors Web App (Directory & Slot Picker)
     path('', include('apps.doctors.web.urls')),
+
+    # Appointments Web App (Slot Hold, Checkout & Bookings)
+    path('', include('apps.appointments.web.urls')),
+
+    # Payments Web App (eSewa & Khalti Gateway Handlers)
+    path('', include('apps.payments.web.urls')),
 
     # Home Landing Page
     path('', home_view, name='home'),

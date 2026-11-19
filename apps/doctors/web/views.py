@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, timedelta
 from django.shortcuts import render, redirect, get_object_or_404
 from django.views import View
 from django.contrib import messages
@@ -24,14 +24,40 @@ class DoctorDashboardView(LoginRequiredMixin, View):
 
         schedules = []
         leaves = []
+        pending_appointments = []
+        upcoming_appointments = []
+        past_appointments = []
+
         if doctor:
             schedules = doctor.schedules.filter(is_active=True).order_by('day_of_week', 'start_time')
             leaves = doctor.leaves.filter(leave_date__gte=timezone.localdate()).order_by('leave_date')
+            try:
+                from apps.appointments.models import Appointment
+                pending_appointments = Appointment.objects.select_related('patient').filter(
+                    doctor=doctor,
+                    status=Appointment.Status.PENDING
+                ).order_by('appointment_date', 'start_time')
+
+                upcoming_appointments = Appointment.objects.select_related('patient').filter(
+                    doctor=doctor,
+                    status__in=[Appointment.Status.ACCEPTED, Appointment.Status.CONFIRMED],
+                    appointment_date__gte=timezone.localdate()
+                ).order_by('appointment_date', 'start_time')
+
+                past_appointments = Appointment.objects.select_related('patient').filter(
+                    doctor=doctor,
+                    status__in=[Appointment.Status.COMPLETED, Appointment.Status.REJECTED, Appointment.Status.CANCELLED]
+                ).order_by('-appointment_date', '-start_time')[:15]
+            except Exception:
+                pass
 
         context = {
             'doctor': doctor,
             'schedules': schedules,
             'leaves': leaves,
+            'pending_appointments': pending_appointments,
+            'upcoming_appointments': upcoming_appointments,
+            'past_appointments': past_appointments,
             'today': timezone.localdate(),
             'schedule_form': DoctorScheduleForm(),
             'leave_form': DoctorLeaveForm(),
@@ -77,6 +103,7 @@ class DoctorProfileDetailView(View):
     """
     Public Doctor Profile Detail View.
     Displays doctor credentials, department info, consultation fees,
+    upcoming 7-day selector strip with auto-first-available-date selection,
     and the interactive HTMX calendar slot picker.
     """
     def get(self, request, slug, *args, **kwargs):
@@ -87,12 +114,48 @@ class DoctorProfileDetailView(View):
         )
 
         today = timezone.localdate()
-        # Compute default slots for today
-        initial_slots = compute_available_slots(doctor, today)
+
+        # Build 7-day upcoming date selector strip (Today + next 6 days)
+        scheduled_weekdays = set(doctor.schedules.filter(is_active=True).values_list('day_of_week', flat=True))
+        doctor_leaves = set(DoctorLeave.objects.filter(
+            doctor=doctor,
+            leave_date__range=[today, today + timedelta(days=6)]
+        ).values_list('leave_date', flat=True))
+
+        upcoming_days = []
+        first_available_date = None
+
+        for i in range(7):
+            curr_date = today + timedelta(days=i)
+            is_scheduled = (curr_date.weekday() in scheduled_weekdays) and (curr_date not in doctor_leaves)
+            day_label = 'Today' if i == 0 else ('Tomorrow' if i == 1 else curr_date.strftime('%a'))
+
+            upcoming_days.append({
+                'date': curr_date,
+                'date_str': curr_date.isoformat(),
+                'day_label': day_label,
+                'day_name': curr_date.strftime('%a'),
+                'day_num': curr_date.strftime('%d'),
+                'month_name': curr_date.strftime('%b'),
+                'is_today': i == 0,
+                'is_scheduled': is_scheduled,
+            })
+
+            # Auto-detect the first upcoming day with available slots
+            if first_available_date is None and is_scheduled:
+                slots_check = compute_available_slots(doctor, curr_date)
+                if slots_check.get('status') == 'SUCCESS' and slots_check.get('available_slots_count', 0) > 0:
+                    first_available_date = curr_date
+
+        # Default to first available date, or fallback to today
+        target_date = first_available_date if first_available_date else today
+        initial_slots = compute_available_slots(doctor, target_date)
 
         context = {
             'doctor': doctor,
             'today': today,
+            'target_date': target_date,
+            'upcoming_days': upcoming_days,
             'initial_slots': initial_slots,
             'schedules': doctor.schedules.filter(is_active=True).order_by('day_of_week', 'start_time'),
         }

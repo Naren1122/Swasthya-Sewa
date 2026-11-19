@@ -108,7 +108,8 @@
     </div>
 
     <!-- Right Column: Interactive Slot Booking Desk (5 cols on Desktop, Sticky) -->
-    <div class="lg:col-span-5 sticky top-24 space-y-4">
+    <div class="lg:col-span-5 sticky top-24 space-y-4"
+         x-data="{ selectedDate: '{{ target_date|date:'Y-m-d' }}' }">
       <div class="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-lg space-y-6">
         
         <!-- Header with Test-Target String -->
@@ -121,20 +122,26 @@
             Select Slot & Reserve
           </h2>
           <p class="text-xs text-slate-500 mt-1">
-            Pick a date to compute available 20-minute consultation slots.
+            Pick an upcoming day or choose from the calendar to view available 20-minute consultation slots.
           </p>
         </div>
 
+        <!-- 7-Day Horizontal Quick-Selector Strip -->
+        {% include "components/doctors/upcoming_days_strip.html" with doctor=doctor upcoming_days=upcoming_days %}
+
         <!-- Date Picker with Live HTMX Trigger -->
-        {% include "components/doctors/calendar_date_picker.html" with doctor=doctor today=today target_date=today %}
+        {% include "components/doctors/calendar_date_picker.html" with doctor=doctor today=today target_date=target_date %}
 
         <!-- Dynamic HTMX Slot Grid Container -->
-        {% include "doctors/partials/_slot_grid.html" with slot_data=initial_slots target_date=today doctor=doctor %}
+        {% include "doctors/partials/_slot_grid.html" with slot_data=initial_slots target_date=target_date doctor=doctor %}
 
       </div>
     </div>
 
   </div>
+
+  <!-- 10-Minute Hold Checkout Modal Container -->
+  {% include "components/appointments/checkout_modal.html" %}
 
 </div>
 {% endblock %}

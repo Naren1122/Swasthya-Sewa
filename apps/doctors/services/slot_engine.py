@@ -65,11 +65,28 @@ def compute_available_slots(doctor: DoctorProfile, target_date: date) -> Dict[st
     booked_times = set()
     try:
         from apps.appointments.models import Appointment
+        from apps.appointments.services.booking_service import release_expired_holds
+        from django.db.models import Q
+
+        # Automatically sweep any lapsed 10-minute holds before evaluating slots
+        release_expired_holds()
+
         active_bookings = Appointment.objects.filter(
             doctor=doctor,
             appointment_date=target_date,
-            status__in=['CONFIRMED', 'PENDING_PAYMENT', 'IN_PROGRESS']
-        ).values_list('appointment_time', flat=True)
+            status__in=[
+                Appointment.Status.PENDING,
+                Appointment.Status.ACCEPTED,
+                Appointment.Status.CONFIRMED,
+                Appointment.Status.PENDING_PAYMENT,
+            ]
+        ).filter(
+            Q(status__in=[
+                Appointment.Status.PENDING,
+                Appointment.Status.ACCEPTED,
+                Appointment.Status.CONFIRMED,
+            ]) | Q(expires_at__gt=timezone.now())
+        ).values_list('start_time', flat=True)
         booked_times = {t.strftime('%H:%M') for t in active_bookings if t}
     except (ImportError, Exception):
         # Gracefully handle when appointments app/table is not yet migrated
