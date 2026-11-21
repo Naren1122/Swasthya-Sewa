@@ -7,17 +7,13 @@ from django.contrib.auth.mixins import LoginRequiredMixin
 from django.http import HttpResponse, HttpResponseBadRequest
 from django.utils import timezone
 from apps.appointments.models import Appointment
-from apps.appointments.services.booking_service import confirm_appointment_booking
+from apps.appointments.services.booking_service import confirm_appointment_booking, cancel_appointment_hold
 from apps.appointments.exceptions import BookingError, SlotUnavailableError
 from apps.payments.models import Payment
 from apps.payments.services.esewa_service import EsewaPaymentService
 from apps.payments.services.khalti_service import KhaltiPaymentService
 
 class PaymentInitiateView(LoginRequiredMixin, View):
-    """
-    Initiates payment for an appointment in active 10-minute hold.
-    Dispatches to eSewa, Khalti, or records Pay-at-Counter option.
-    """
     def post(self, request, appointment_id, *args, **kwargs):
         appointment = get_object_or_404(
             Appointment.objects.select_related('doctor', 'doctor__user'),
@@ -110,9 +106,15 @@ class PaymentInitiateView(LoginRequiredMixin, View):
             if result.get('success') and 'payment_url' in result:
                 return redirect(result['payment_url'])
             else:
-                messages.error(request, f"Khalti payment initialization failed: {result.get('error')}")
-                return redirect('patient_bookings')
+                # Mark payment failed and immediately release the 10-minute slot hold
+                payment.mark_failed(response_data=result)
+                cancel_appointment_hold(user=request.user, appointment_id=appointment.id)
+                err_msg = result.get('error', 'Gateway error')
+                messages.error(request, f"Khalti payment initialization failed: {err_msg}. Your slot hold has been released.")
+                return redirect('doctor_detail', slug=appointment.doctor.slug)
 
+        payment.mark_failed(response_data={'error': 'Invalid payment gateway selected'})
+        cancel_appointment_hold(user=request.user, appointment_id=appointment.id)
         messages.error(request, "Invalid payment gateway selected.")
         return redirect('doctor_detail', slug=appointment.doctor.slug)
 
@@ -155,9 +157,12 @@ class EsewaFailureCallbackView(View):
     def get(self, request, *args, **kwargs):
         uuid_str = request.GET.get('uuid')
         if uuid_str:
-            Payment.objects.filter(transaction_uuid=uuid_str, status=Payment.Status.INITIATED).update(status=Payment.Status.FAILED)
+            payment = Payment.objects.filter(transaction_uuid=uuid_str).select_related('appointment', 'patient').first()
+            if payment and payment.status == Payment.Status.INITIATED:
+                payment.mark_failed(response_data={'reason': 'User cancelled or checkout failed at eSewa'})
+                cancel_appointment_hold(user=payment.patient, appointment_id=payment.appointment.id)
 
-        messages.warning(request, "eSewa payment transaction was cancelled or failed.")
+        messages.warning(request, "eSewa payment transaction was cancelled or failed. Your slot hold has been released.")
         return redirect('patient_bookings')
 
 
@@ -183,7 +188,8 @@ class KhaltiCallbackView(View):
         if not is_success or not payment:
             if payment:
                 payment.mark_failed(response_data=data)
-            messages.error(request, f"Khalti payment verification failed ({status_str}).")
+                cancel_appointment_hold(user=payment.patient, appointment_id=payment.appointment.id)
+            messages.error(request, f"Khalti payment verification failed ({status_str}). Slot hold has been released.")
             return redirect('patient_bookings')
 
         payment.mark_success(gateway_ref=pidx, response_data=data)

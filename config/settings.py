@@ -33,6 +33,10 @@ THIRD_PARTY_APPS = [
     'rest_framework_simplejwt',
     'drf_spectacular',
     
+    # Cloudinary Storage (Phase 5)
+    'cloudinary_storage',
+    'cloudinary',
+
     # Social Auth & Accounts
     'allauth',
     'allauth.account',
@@ -141,6 +145,14 @@ STATIC_ROOT = BASE_DIR / 'staticfiles'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+CLOUDINARY_STORAGE = {
+    'CLOUD_NAME': os.getenv('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.getenv('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.getenv('CLOUDINARY_API_SECRET', ''),
+}
+if os.getenv('CLOUDINARY_CLOUD_NAME'):
+    DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Session & CSRF Settings (Optimized for HTMX)
@@ -233,3 +245,6 @@ ESEWA_GATEWAY_URL = os.getenv('ESEWA_GATEWAY_URL', 'https://rc-epay.esewa.com.np
 KHALTI_PUBLIC_KEY = os.getenv('KHALTI_PUBLIC_KEY', 'test_public_key_dc74e0fd69bc4f179157dd0426915f61')
 KHALTI_SECRET_KEY = os.getenv('KHALTI_SECRET_KEY', 'test_secret_key_f59e8b7d18b2499f886f23e0183d7414')
 KHALTI_GATEWAY_URL = os.getenv('KHALTI_GATEWAY_URL', 'https://a.khalti.com/api/v2/epayment/initiate/')
+
+# Telemedicine WebRTC Server (Open Jitsi instance without third-party auth requirements)
+JITSI_DOMAIN = os.getenv('JITSI_DOMAIN', 'jitsi.riot.im')

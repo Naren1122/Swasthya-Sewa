@@ -5,11 +5,6 @@ from django.utils import timezone
 from apps.core.models import BaseModel
 
 class Payment(BaseModel):
-    """
-    Financial Ledger for Swasthya-Sewa.
-    Maintains an immutable record of every transaction attempt, gateway response,
-    HMAC verification, and reconciliation status.
-    """
     class Gateway(models.TextChoices):
         ESEWA = 'ESEWA', 'eSewa Mobile Wallet'
         KHALTI = 'KHALTI', 'Khalti Digital Wallet'
@@ -81,6 +76,17 @@ class Payment(BaseModel):
         null=True,
         blank=True
     )
+    refunded_at = models.DateTimeField(
+        'Refunded Timestamp',
+        null=True,
+        blank=True
+    )
+    refund_reason = models.CharField(
+        'Refund Reason',
+        max_length=255,
+        blank=True,
+        default=''
+    )
 
     class Meta:
         verbose_name = 'Payment Transaction'
@@ -111,3 +117,14 @@ class Payment(BaseModel):
             self.gateway_response = response_data
         self.completed_at = timezone.now()
         self.save(update_fields=['status', 'gateway_response', 'completed_at', 'updated_at'])
+
+    def mark_refunded(self, reason: str = '', response_data: dict = None):
+        """Marks transaction as refunded and records timestamp and reason."""
+        self.status = self.Status.REFUNDED
+        self.refund_reason = reason
+        self.refunded_at = timezone.now()
+        if response_data:
+            if not isinstance(self.gateway_response, dict):
+                self.gateway_response = {}
+            self.gateway_response['refund_response'] = response_data
+        self.save(update_fields=['status', 'refund_reason', 'refunded_at', 'gateway_response', 'updated_at'])

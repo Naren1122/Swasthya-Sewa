@@ -82,7 +82,7 @@
                   </div>
                   <div class="flex items-center gap-2">
                     <span class="badge badge-ghost badge-sm text-amber-700 font-medium">On Leave</span>
-                    <form method="POST" action="{% url 'doctor_leave_delete' leave.id %}" onsubmit="return confirm('Cancel this scheduled leave for {{ leave.leave_date|date:'M d, Y' }}?');" class="inline">
+                    <form method="POST" action="{% url 'doctor_leave_delete' leave.id %}" onsubmit="if (!confirm('Cancel this scheduled leave for {{ leave.leave_date|date:'M d, Y' }}?')) return false; this.querySelector('button[type=submit]').disabled = true;" class="inline">
                       {% csrf_token %}
                       <button type="submit" class="btn btn-ghost btn-circle btn-xs text-rose-500 hover:bg-rose-50" title="Cancel leave">
                         <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>

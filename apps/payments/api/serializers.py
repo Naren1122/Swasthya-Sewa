@@ -26,6 +26,8 @@ class PaymentSerializer(serializers.ModelSerializer):
             'status_display',
             'transaction_uuid',
             'gateway_ref',
+            'refund_reason',
+            'refunded_at',
             'created_at',
             'updated_at',
         ]

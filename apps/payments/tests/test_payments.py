@@ -204,6 +204,36 @@ class PaymentGatewayTests(TestCase):
         self.assertTrue(Payment.objects.filter(appointment=self.appointment, gateway=Payment.Gateway.KHALTI).exists())
 
     @patch('requests.post')
+    def test_khalti_initiation_failure_with_invalid_token_releases_hold_and_fails_payment(self, mock_post):
+        """Verify 401 Invalid Token from Khalti marks payment FAILED and releases slot hold immediately."""
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        mock_response.json.return_value = {
+            'detail': 'Invalid token.',
+            'status_code': 401
+        }
+        mock_post.return_value = mock_response
+
+        self.client.force_login(self.patient)
+        url = reverse('payment_initiate', kwargs={'appointment_id': self.appointment.id})
+        response = self.client.post(url, {
+            'gateway': 'KHALTI',
+            'consultation_type': 'PHYSICAL'
+        })
+
+        # Must redirect back to doctor profile so patient can choose another slot/gateway
+        self.assertRedirects(response, reverse('doctor_detail', kwargs={'slug': self.doctor.slug}))
+
+        # Payment must be marked FAILED
+        payment = Payment.objects.filter(appointment=self.appointment, gateway=Payment.Gateway.KHALTI).first()
+        self.assertIsNotNone(payment)
+        self.assertEqual(payment.status, Payment.Status.FAILED)
+
+        # Appointment slot hold must be cancelled (released), NOT PENDING_PAYMENT or PENDING
+        self.appointment.refresh_from_db()
+        self.assertEqual(self.appointment.status, Appointment.Status.CANCELLED)
+
+    @patch('requests.post')
     def test_khalti_success_callback_verifies_and_confirms(self, mock_post):
         """Verify successful Khalti lookup marks payment SUCCESS and confirms appointment to PENDING."""
         self.client.force_login(self.patient)
@@ -235,4 +265,73 @@ class PaymentGatewayTests(TestCase):
         self.assertEqual(payment.gateway_ref, 'test_pidx_abc123')
         self.appointment.refresh_from_db()
         self.assertEqual(self.appointment.status, Appointment.Status.PENDING)
+
+    def test_doctor_reject_triggers_automatic_refund(self):
+        """Verify doctor rejecting appointment auto-refunds successful payment."""
+        from apps.appointments.services.booking_service import reject_appointment
+
+        # Appointment in PENDING status with successful payment
+        self.appointment.status = Appointment.Status.PENDING
+        self.appointment.save()
+
+        payment = Payment.objects.create(
+            appointment=self.appointment,
+            patient=self.patient,
+            gateway=Payment.Gateway.ESEWA,
+            amount=700,
+            status=Payment.Status.SUCCESS
+        )
+
+        reject_appointment(
+            doctor_user=self.doc_user,
+            appointment_id=self.appointment.id,
+            reason="Doctor unavailable due to emergency duty"
+        )
+
+        self.appointment.refresh_from_db()
+        self.assertEqual(self.appointment.status, Appointment.Status.REJECTED)
+
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.REFUNDED)
+        self.assertIn("emergency duty", payment.refund_reason)
+        self.assertIsNotNone(payment.refunded_at)
+
+    @patch('requests.post')
+    def test_patient_cancel_triggers_automatic_refund_khalti(self, mock_post):
+        """Verify patient cancelling appointment auto-refunds Khalti payment via API."""
+        from apps.appointments.services.booking_service import cancel_confirmed_appointment
+
+        self.appointment.status = Appointment.Status.PENDING
+        self.appointment.save()
+
+        payment = Payment.objects.create(
+            appointment=self.appointment,
+            patient=self.patient,
+            gateway=Payment.Gateway.KHALTI,
+            gateway_ref='pidx_refund_test_789',
+            amount=700,
+            status=Payment.Status.SUCCESS
+        )
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.content = b'{"status": "Refunded"}'
+        mock_response.json.return_value = {'status': 'Refunded'}
+        mock_post.return_value = mock_response
+
+        cancel_confirmed_appointment(
+            user=self.patient,
+            appointment_id=self.appointment.id,
+            cancellation_reason="Personal emergency"
+        )
+
+        self.appointment.refresh_from_db()
+        self.assertEqual(self.appointment.status, Appointment.Status.CANCELLED)
+
+        payment.refresh_from_db()
+        self.assertEqual(payment.status, Payment.Status.REFUNDED)
+        self.assertIn("Personal emergency", payment.refund_reason)
+        self.assertIsNotNone(payment.refunded_at)
+        mock_post.assert_called_once()
+
 

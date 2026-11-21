@@ -26,129 +26,220 @@
     </a>
   </div>
 
-  <!-- Appointments List -->
-  {% if appointments %}
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
-      {% for app in appointments %}
-        <div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
-          
-          <!-- Top Row: Doctor Info & Status Badge -->
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-3 min-w-0">
-              {% if app.doctor.avatar %}
-                <img src="{{ app.doctor.avatar.url }}" alt="{{ app.doctor.user.full_name }}" class="w-12 h-12 rounded-2xl object-cover border border-slate-200" />
-              {% else %}
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white font-extrabold text-base flex items-center justify-center shadow-sm flex-shrink-0">
-                  {{ app.doctor.user.full_name|slice:":2"|upper }}
+  <!-- Appointments List (Live-Synced) -->
+  <div id="patient-bookings-container"
+       hx-get="{% url 'patient_bookings' %}"
+       hx-trigger="every 6s"
+       hx-select="#patient-bookings-container"
+       hx-swap="outerHTML">
+    {% if appointments %}
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {% for app in appointments %}
+          <div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md transition-all flex flex-col justify-between space-y-4">
+            
+            <!-- Top Row: Doctor Info & Status Badge -->
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                {% if app.doctor.avatar %}
+                  <img src="{{ app.doctor.avatar.url }}" alt="{{ app.doctor.user.full_name }}" class="w-12 h-12 rounded-2xl object-cover border border-slate-200" />
+                {% else %}
+                  <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-sky-600 to-teal-500 text-white font-extrabold text-base flex items-center justify-center shadow-sm flex-shrink-0">
+                    {{ app.doctor.user.full_name|slice:":2"|upper }}
+                  </div>
+                {% endif %}
+                <div class="min-w-0">
+                  <span class="badge badge-primary badge-outline text-[10px] font-bold">{{ app.doctor.department.name }}</span>
+                  <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate mt-0.5">
+                    {{ app.doctor.user.full_name }}
+                  </h3>
+                  <span class="text-[11px] text-slate-400">NMC #{{ app.doctor.nmc_number }}</span>
                 </div>
-              {% endif %}
-              <div class="min-w-0">
-                <span class="badge badge-primary badge-outline text-[10px] font-bold">{{ app.doctor.department.name }}</span>
-                <h3 class="font-bold text-slate-900 text-sm sm:text-base truncate mt-0.5">
-                  {{ app.doctor.user.full_name }}
-                </h3>
-                <span class="text-[11px] text-slate-400">NMC #{{ app.doctor.nmc_number }}</span>
+              </div>
+
+              <!-- Status Badge & Delete Action -->
+              <div class="flex items-center gap-1.5 flex-shrink-0">
+                <div>
+                  {% if app.status == 'ACCEPTED' or app.status == 'CONFIRMED' %}
+                    <span class="badge badge-success text-white font-semibold text-xs gap-1">
+                      <i data-lucide="check-circle" class="w-3 h-3"></i> Accepted
+                    </span>
+                  {% elif app.status == 'PENDING' %}
+                    <span class="badge badge-warning text-white font-semibold text-xs gap-1">
+                      <i data-lucide="clock-3" class="w-3 h-3"></i> Pending Approval
+                    </span>
+                  {% elif app.status == 'PENDING_PAYMENT' %}
+                    <span class="badge badge-warning text-white font-semibold text-xs gap-1">
+                      <i data-lucide="clock" class="w-3 h-3"></i> Hold Pending
+                    </span>
+                  {% elif app.status == 'COMPLETED' %}
+                    <span class="badge badge-info text-white font-semibold text-xs gap-1">
+                      <i data-lucide="check-check" class="w-3 h-3"></i> Completed
+                    </span>
+                  {% elif app.status == 'REJECTED' %}
+                    <span class="badge badge-error text-white font-semibold text-xs">Rejected</span>
+                  {% elif app.status == 'CANCELLED' %}
+                    <span class="badge badge-error text-white font-semibold text-xs">Cancelled</span>
+                  {% else %}
+                    <span class="badge badge-ghost text-slate-500 font-semibold text-xs">{{ app.get_status_display }}</span>
+                  {% endif %}
+                </div>
+
+                <!-- Delete Booking CTA -->
+                <form method="POST"
+                      action="{% url 'appointment_delete' app.id %}"
+                      onsubmit="return confirm('Permanently delete this consultation record?');"
+                      class="inline">
+                  {% csrf_token %}
+                  <button type="submit"
+                          class="btn btn-ghost btn-circle btn-xs text-rose-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Delete booking">
+                    <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  </button>
+                </form>
               </div>
             </div>
 
-            <!-- Status Badge -->
-            <div>
-              {% if app.status == 'ACCEPTED' or app.status == 'CONFIRMED' %}
-                <span class="badge badge-success text-white font-semibold text-xs gap-1">
-                  <i data-lucide="check-circle" class="w-3 h-3"></i> Accepted
-                </span>
-              {% elif app.status == 'PENDING' %}
-                <span class="badge badge-warning text-white font-semibold text-xs gap-1">
-                  <i data-lucide="clock-3" class="w-3 h-3"></i> Pending Approval
-                </span>
-              {% elif app.status == 'PENDING_PAYMENT' %}
-                <span class="badge badge-warning text-white font-semibold text-xs gap-1">
-                  <i data-lucide="clock" class="w-3 h-3"></i> Hold Pending
-                </span>
-              {% elif app.status == 'COMPLETED' %}
-                <span class="badge badge-info text-white font-semibold text-xs gap-1">
-                  <i data-lucide="check-check" class="w-3 h-3"></i> Completed
-                </span>
-              {% elif app.status == 'REJECTED' %}
-                <span class="badge badge-error text-white font-semibold text-xs">Rejected</span>
-              {% elif app.status == 'CANCELLED' %}
-                <span class="badge badge-error text-white font-semibold text-xs">Cancelled</span>
-              {% else %}
-                <span class="badge badge-ghost text-slate-500 font-semibold text-xs">{{ app.get_status_display }}</span>
-              {% endif %}
+            <!-- Schedule Details Box -->
+            <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl grid grid-cols-2 gap-3 text-xs">
+              <div>
+                <span class="text-slate-400 uppercase font-semibold text-[10px] block">Date</span>
+                <span class="font-bold text-slate-800">{{ app.appointment_date|date:"l, M d, Y" }}</span>
+              </div>
+              <div>
+                <span class="text-slate-400 uppercase font-semibold text-[10px] block">Time Window</span>
+                <span class="font-bold text-slate-800 font-mono">{{ app.start_time|time:"g:i A" }} – {{ app.end_time|time:"g:i A" }}</span>
+              </div>
             </div>
+
+            <!-- Patient Notes Preview if Present -->
+            {% if app.patient_notes %}
+              <div class="text-xs text-slate-500 bg-slate-50/50 rounded-xl p-2.5 border border-slate-100 line-clamp-2">
+                <strong class="text-slate-600">Notes:</strong> {{ app.patient_notes }}
+              </div>
+            {% endif %}
+
+            <!-- Payment Status Mini-Banner -->
+            {% with last_payment=app.payments.last %}
+            {% if last_payment %}
+              <div class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-50/70 border border-slate-100 text-[11px]">
+                <span class="text-slate-400 flex items-center gap-1">
+                  <i data-lucide="credit-card" class="w-3 h-3 text-slate-400"></i>
+                  {{ last_payment.get_gateway_display }}
+                </span>
+                {% if last_payment.status == 'SUCCESS' %}
+                  <span class="text-emerald-600 font-bold flex items-center gap-1">
+                    <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i> Paid
+                  </span>
+                {% elif last_payment.status == 'REFUNDED' %}
+                  <span class="text-rose-600 font-bold flex items-center gap-1">
+                    <i data-lucide="rotate-ccw" class="w-3 h-3"></i> Refunded
+                  </span>
+                {% elif last_payment.gateway == 'CASH_ON_ARRIVAL' %}
+                  <span class="text-amber-600 font-medium">Pay at Desk</span>
+                {% elif last_payment.status == 'FAILED' %}
+                  <span class="text-rose-600 font-semibold">Payment Failed</span>
+                {% else %}
+                  <span class="text-slate-500 font-medium">{{ last_payment.get_status_display }}</span>
+                {% endif %}
+              </div>
+            {% endif %}
+            {% endwith %}
+
+            <!-- Bottom Row: Mode, Fee & Action CTAs -->
+            <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
+              <div class="flex items-center gap-1.5 text-slate-600 font-medium">
+                {% if app.consultation_type == 'TELEMEDICINE' %}
+                  <i data-lucide="video" class="w-4 h-4 text-teal-600"></i>
+                  <span class="font-semibold text-teal-700">Video Consultation</span>
+                {% else %}
+                  <i data-lucide="building-2" class="w-4 h-4 text-sky-600"></i>
+                  <span>Hospital Visit</span>
+                {% endif %}
+              </div>
+
+              <div class="flex items-center gap-2">
+                <span class="font-bold text-slate-900 mr-1">NPR {{ app.fee|floatformat:0 }}</span>
+                {% if app.consultation_type == 'TELEMEDICINE' and app.status == 'ACCEPTED' or app.consultation_type == 'TELEMEDICINE' and app.status == 'CONFIRMED' %}
+                  <a href="{% url 'telemed_room' app.id %}" class="btn btn-secondary btn-xs rounded-lg text-white font-bold gap-1 shadow-2xs">
+                    <i data-lucide="video" class="w-3 h-3"></i>
+                    <span>Join Room</span>
+                  </a>
+                {% endif %}
+                <a href="{% url 'appointment_detail' app.id %}" class="btn btn-outline btn-xs rounded-lg text-slate-600 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300">
+                  Receipt
+                </a>
+              </div>
+            </div>
+
           </div>
+        {% endfor %}
+      </div>
 
-          <!-- Schedule Details Box -->
-          <div class="p-3.5 bg-slate-50 border border-slate-200/80 rounded-2xl grid grid-cols-2 gap-3 text-xs">
-            <div>
-              <span class="text-slate-400 uppercase font-semibold text-[10px] block">Date</span>
-              <span class="font-bold text-slate-800">{{ app.appointment_date|date:"l, M d, Y" }}</span>
-            </div>
-            <div>
-              <span class="text-slate-400 uppercase font-semibold text-[10px] block">Time Window</span>
-              <span class="font-bold text-slate-800 font-mono">{{ app.start_time|time:"g:i A" }} – {{ app.end_time|time:"g:i A" }}</span>
-            </div>
-          </div>
+      <!-- 8 Items Per Page Pagination Bar -->
+      {% if page_obj and page_obj.has_other_pages %}
+        <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200/80 mt-6">
+          <p class="text-xs text-slate-500 font-medium">
+            Showing <span class="font-bold text-slate-800">{{ page_obj.start_index }}–{{ page_obj.end_index }}</span> of <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> booked consultations
+          </p>
 
-          <!-- Patient Notes Preview if Present -->
-          {% if app.patient_notes %}
-            <div class="text-xs text-slate-500 bg-slate-50/50 rounded-xl p-2.5 border border-slate-100 line-clamp-2">
-              <strong class="text-slate-600">Notes:</strong> {{ app.patient_notes }}
-            </div>
-          {% endif %}
-
-          <!-- Payment Status Mini-Banner -->
-          {% with last_payment=app.payments.last %}
-          {% if last_payment %}
-            <div class="flex items-center justify-between px-3 py-1.5 rounded-xl bg-slate-50/70 border border-slate-100 text-[11px]">
-              <span class="text-slate-400 flex items-center gap-1">
-                <i data-lucide="credit-card" class="w-3 h-3 text-slate-400"></i>
-                {{ last_payment.get_gateway_display }}
-              </span>
-              {% if last_payment.status == 'SUCCESS' %}
-                <span class="text-emerald-600 font-bold flex items-center gap-1">
-                  <i data-lucide="check" class="w-3 h-3 stroke-[3]"></i> Paid
-                </span>
-              {% elif last_payment.gateway == 'CASH_ON_ARRIVAL' %}
-                <span class="text-amber-600 font-medium">Pay at Desk</span>
-              {% elif last_payment.status == 'FAILED' %}
-                <span class="text-rose-600 font-semibold">Payment Failed</span>
-              {% else %}
-                <span class="text-slate-500 font-medium">{{ last_payment.get_status_display }}</span>
-              {% endif %}
-            </div>
-          {% endif %}
-          {% endwith %}
-
-          <!-- Bottom Row: Mode, Fee & Action CTAs -->
-          <div class="pt-3 border-t border-slate-100 flex items-center justify-between gap-2 text-xs">
-            <div class="flex items-center gap-1.5 text-slate-600 font-medium">
-              {% if app.consultation_type == 'TELEMEDICINE' %}
-                <i data-lucide="video" class="w-4 h-4 text-teal-600"></i>
-                <span class="font-semibold text-teal-700">Video Consultation</span>
-              {% else %}
-                <i data-lucide="building-2" class="w-4 h-4 text-sky-600"></i>
-                <span>Hospital Visit</span>
-              {% endif %}
-            </div>
-
-            <div class="flex items-center gap-2">
-              <span class="font-bold text-slate-900 mr-1">NPR {{ app.fee|floatformat:0 }}</span>
-              <a href="{% url 'appointment_detail' app.id %}" class="btn btn-outline btn-xs rounded-lg text-slate-600 hover:bg-sky-50 hover:text-sky-700 hover:border-sky-300">
-                Receipt
+          <div class="join shadow-xs">
+            {% if page_obj.has_previous %}
+              <a href="?page={{ page_obj.previous_page_number }}"
+                 hx-get="{% url 'patient_bookings' %}?page={{ page_obj.previous_page_number }}"
+                 hx-target="#patient-bookings-container"
+                 hx-select="#patient-bookings-container"
+                 hx-swap="outerHTML"
+                 hx-push-url="true"
+                 class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+                « Prev
               </a>
-            </div>
-          </div>
+            {% else %}
+              <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>« Prev</button>
+            {% endif %}
 
+            {% for num in page_obj.paginator.page_range %}
+              {% if page_obj.number == num %}
+                <button class="join-item btn btn-sm btn-primary text-white font-bold">{{ num }}</button>
+              {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+                <a href="?page={{ num }}"
+                   hx-get="{% url 'patient_bookings' %}?page={{ num }}"
+                   hx-target="#patient-bookings-container"
+                   hx-select="#patient-bookings-container"
+                   hx-swap="outerHTML"
+                   hx-push-url="true"
+                   class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+                  {{ num }}
+                </a>
+              {% endif %}
+            {% endfor %}
+
+            {% if page_obj.has_next %}
+              <a href="?page={{ page_obj.next_page_number }}"
+                 hx-get="{% url 'patient_bookings' %}?page={{ page_obj.next_page_number }}"
+                 hx-target="#patient-bookings-container"
+                 hx-select="#patient-bookings-container"
+                 hx-swap="outerHTML"
+                 hx-push-url="true"
+                 class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+                Next »
+              </a>
+            {% else %}
+              <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>Next »</button>
+            {% endif %}
+          </div>
         </div>
-      {% endfor %}
-    </div>
-  {% else %}
-    <div class="py-12">
-      {% include "components/cards/empty_state.html" with title="No Consultations Found" message="You have not booked any medical appointments yet. Search our verified doctor directory to reserve a consultation." cta_url="/doctors/" cta_label="Find a Doctor" cta_icon="search" icon="calendar-x" %}
-    </div>
-  {% endif %}
+      {% endif %}
+    {% else %}
+      <div class="py-12">
+        {% include "components/cards/empty_state.html" with title="No Consultations Found" message="You have not booked any medical appointments yet. Search our verified doctor directory to reserve a consultation." cta_url="/doctors/" cta_label="Find a Doctor" cta_icon="search" icon="calendar-x" %}
+      </div>
+    {% endif %}
+
+    <!-- Trigger Lucide Icons on dynamic HTMX updates -->
+    <script>
+      if (window.lucide) lucide.createIcons();
+    </script>
+  </div>
 
 </div>
 {% endblock %}

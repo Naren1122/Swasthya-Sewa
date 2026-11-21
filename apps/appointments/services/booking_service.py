@@ -68,7 +68,25 @@ def hold_appointment_slot(
 
     # 6. ATOMIC TRANSACTION & PESSIMISTIC ROW LOCKING
     with transaction.atomic():
-        # Check for active conflicting appointments (Confirmed, Accepted, Pending Review, OR Active 10-minute Hold)
+        # Check if THIS user already has an active hold on this exact slot (idempotent re-open)
+        my_existing_hold = Appointment.objects.select_for_update().filter(
+            doctor=doctor,
+            appointment_date=target_date,
+            start_time=start_time,
+            patient=patient,
+            status=Appointment.Status.PENDING_PAYMENT,
+            expires_at__gt=timezone.now()
+        ).first()
+
+        if my_existing_hold:
+            if consultation_type:
+                my_existing_hold.consultation_type = consultation_type
+            if patient_notes:
+                my_existing_hold.patient_notes = patient_notes.strip()
+            my_existing_hold.save(update_fields=['consultation_type', 'patient_notes', 'updated_at'])
+            return my_existing_hold
+
+        # Check for active conflicting appointments (Confirmed, Accepted, Pending Review, OR Active 10-minute Hold by OTHER patients)
         active_conflict = Appointment.objects.select_for_update().filter(
             doctor=doctor,
             appointment_date=target_date,
@@ -89,6 +107,14 @@ def hold_appointment_slot(
 
         if active_conflict:
             raise SlotUnavailableError("This slot was just claimed by another patient. Please choose another time.")
+
+        # Release any previous active unpaid hold for this patient with this doctor (switching slots seamlessly)
+        Appointment.objects.filter(
+            doctor=doctor,
+            patient=patient,
+            status=Appointment.Status.PENDING_PAYMENT,
+            expires_at__gt=timezone.now()
+        ).update(status=Appointment.Status.CANCELLED)
 
         # 7. Create Appointment with 10-Minute Hold Window
         expires_at = timezone.now() + timedelta(minutes=10)
@@ -205,10 +231,30 @@ def accept_appointment(doctor_user: User, appointment_id: uuid.UUID) -> Appointm
         return appointment
 
 
+def process_appointment_refund(appointment: Appointment, reason: str = "") -> None:
+    """
+    Refunds any successful online payments associated with this appointment.
+    Gracefully handles Khalti refund API and updates payment status to REFUNDED.
+    """
+    from apps.payments.models import Payment
+    from apps.payments.services.khalti_service import KhaltiPaymentService
+
+    successful_payments = appointment.payments.filter(status=Payment.Status.SUCCESS)
+    for payment in successful_payments:
+        refund_data = {}
+        if payment.gateway == Payment.Gateway.KHALTI and payment.gateway_ref:
+            _, refund_data = KhaltiPaymentService.refund_payment(
+                pidx=payment.gateway_ref,
+                reason=reason
+            )
+        payment.mark_refunded(reason=reason, response_data=refund_data)
+
+
 def reject_appointment(doctor_user: User, appointment_id: uuid.UUID, reason: str = "") -> Appointment:
     """
     Doctor rejects a pending consultation request, releasing the slot.
     Transitions status: PENDING -> REJECTED.
+    Automatically refunds any successful online payments.
     """
     with transaction.atomic():
         appointment = Appointment.objects.select_for_update().filter(
@@ -227,6 +273,11 @@ def reject_appointment(doctor_user: User, appointment_id: uuid.UUID, reason: str
             appointment.patient_notes = (appointment.patient_notes + f"\n[Rejected]: {reason}").strip()
 
         appointment.save(update_fields=['status', 'patient_notes', 'updated_at'])
+
+        # Auto-refund any online payment
+        refund_reason = f"Doctor rejected consultation: {reason}" if reason else "Doctor rejected consultation"
+        process_appointment_refund(appointment, reason=refund_reason)
+
         return appointment
 
 
@@ -282,6 +333,11 @@ def cancel_confirmed_appointment(
         if cancellation_reason:
             appointment.patient_notes = (appointment.patient_notes + f"\n[Cancelled]: {cancellation_reason}").strip()
         appointment.save(update_fields=['status', 'patient_notes', 'updated_at'])
+
+        # Auto-refund any online payment
+        refund_reason = f"Cancelled: {cancellation_reason}" if cancellation_reason else "Consultation cancelled"
+        process_appointment_refund(appointment, reason=refund_reason)
+
         return appointment
 
 

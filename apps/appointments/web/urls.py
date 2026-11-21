@@ -5,6 +5,7 @@ from apps.appointments.web.views import (
     AppointmentConfirmView,
     AppointmentDetailView,
     AppointmentCancelView,
+    AppointmentDeleteView,
     PatientBookingsView,
     DoctorAppointmentAcceptView,
     DoctorAppointmentRejectView,
@@ -26,6 +27,9 @@ urlpatterns = [
 
     # Cancel Confirmed Appointment
     path('appointments/<uuid:appointment_id>/cancel/', AppointmentCancelView.as_view(), name='appointment_cancel'),
+
+    # Delete / Remove Appointment Booking
+    path('appointments/<uuid:appointment_id>/delete/', AppointmentDeleteView.as_view(), name='appointment_delete'),
 
     # Doctor Actions: Accept, Reject, Complete
     path('appointments/<uuid:appointment_id>/accept/', DoctorAppointmentAcceptView.as_view(), name='doctor_appointment_accept'),

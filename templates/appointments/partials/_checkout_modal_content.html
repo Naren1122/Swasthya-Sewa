@@ -11,8 +11,12 @@
   </div>
   
   <button type="button" 
+          hx-post="{% url 'appointment_cancel_hold' appointment.id %}"
+          hx-target="#checkout-modal-container"
+          hx-swap="innerHTML"
           onclick="document.getElementById('checkout-modal').close()" 
-          class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700">
+          class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700"
+          title="Release slot & close">
     <i data-lucide="x" class="w-5 h-5"></i>
   </button>
 </div>

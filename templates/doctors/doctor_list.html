@@ -30,7 +30,7 @@
 
   <!-- Dynamic Doctor Cards Grid (Replaced by HTMX on search/filter) -->
   <div id="doctor-grid">
-    {% include "doctors/partials/_doctor_cards.html" with doctors=doctors %}
+    {% include "doctors/partials/_doctor_cards.html" with doctors=doctors page_obj=page_obj %}
   </div>
 
 </div>

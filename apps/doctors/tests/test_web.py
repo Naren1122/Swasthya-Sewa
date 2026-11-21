@@ -133,6 +133,14 @@ class DoctorWebTests(TestCase):
         self.assertEqual(response.status_code, 404)
         self.assertTrue(DoctorSchedule.objects.filter(id=other_shift.id).exists())
 
+    def test_doctor_delete_already_deleted_shift_is_idempotent_and_redirects(self):
+        """Verify deleting an already removed shift redirects cleanly without crashing."""
+        self.client.force_login(self.user)
+        import uuid
+        non_existent_id = uuid.uuid4()
+        response = self.client.post(reverse('doctor_schedule_delete', kwargs={'schedule_id': non_existent_id}))
+        self.assertRedirects(response, reverse('doctor_dashboard'))
+
     def test_doctor_can_declare_and_cancel_leave(self):
         """Verify doctor can self-serve log and cancel out-of-office leaves."""
         self.client.force_login(self.user)

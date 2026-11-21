@@ -1,0 +1,324 @@
+{% comment %}
+  Partial Component: Doctor's In-Call Clinical Notes & Prescription Pad
+  Doctor writes diagnosis, medications, and advice. Patient views live prescription summary.
+{% endcomment %}
+
+<div class="space-y-4">
+
+  {% if is_doctor %}
+    <!-- DOCTOR'S EDITING PAD -->
+    <div class="space-y-3">
+      
+      <!-- Status Notice -->
+      {% if consultation_note and consultation_note.is_finalized %}
+        <div class="p-3 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-800 flex items-start gap-2.5">
+          <i data-lucide="check-circle" class="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-extrabold block">Consultation Finalized</span>
+            <span class="text-[11px] text-emerald-700">
+              Completed on {{ consultation_note.finalized_at|date:"l, M d, Y, g:i A" }}.
+            </span>
+          </div>
+        </div>
+      {% endif %}
+
+      <form hx-post="{% url 'telemed_note_save' appointment.id %}"
+            hx-target="#notes-container"
+            hx-swap="innerHTML"
+            hx-encoding="multipart/form-data"
+            class="space-y-3 text-xs">
+        {% csrf_token %}
+
+        <!-- Diagnosis Field -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">
+            Clinical Diagnosis / Medical Impression
+          </label>
+          <input type="text"
+                 name="diagnosis"
+                 value="{{ consultation_note.diagnosis|default:'' }}"
+                 placeholder="e.g. Essential Hypertension (Grade 1)"
+                 class="input input-sm input-bordered w-full rounded-xl bg-slate-50/50 text-xs focus:bg-white" />
+        </div>
+
+        <!-- Symptoms Field -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">
+            Presenting Symptoms & History
+          </label>
+          <textarea name="symptoms"
+                    rows="2"
+                    placeholder="e.g. Headache for 3 days, dizziness upon standing..."
+                    class="textarea textarea-bordered textarea-sm w-full rounded-xl bg-slate-50/50 text-xs focus:bg-white">{{ consultation_note.symptoms|default:'' }}</textarea>
+        </div>
+
+        <!-- Prescription & Dosages -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1 flex items-center justify-between">
+            <span>Medications & Dosages (Rx)</span>
+            <span class="text-[10px] text-slate-400 font-normal">Drug - Dose - Frequency - Duration</span>
+          </label>
+          <textarea name="prescription"
+                    rows="4"
+                    placeholder="e.g.
+1. Tab Amlodipine 5mg - 1 Tab OD Morning (After food) x 30 Days
+2. Tab Paracetamol 500mg - SOS for headache"
+                    class="textarea textarea-bordered textarea-sm w-full rounded-xl bg-slate-50/50 text-xs font-mono focus:bg-white">{{ consultation_note.prescription|default:'' }}</textarea>
+        </div>
+
+        <!-- Lifestyle & Dietary Advice -->
+        <div>
+          <label class="block font-bold text-slate-800 mb-1">
+            Dietary & Lifestyle Advice
+          </label>
+          <textarea name="advice"
+                    rows="2"
+                    placeholder="e.g. Low sodium diet, 30 min daily brisk walking, monitor BP weekly..."
+                    class="textarea textarea-bordered textarea-sm w-full rounded-xl bg-slate-50/50 text-xs focus:bg-white">{{ consultation_note.advice|default:'' }}</textarea>
+        </div>
+
+        <!-- Follow-Up Date & Optional Upload -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <div>
+            <label class="block font-bold text-slate-800 mb-1">Suggested Follow-Up</label>
+            <input type="date"
+                   name="follow_up_date"
+                   value="{{ consultation_note.follow_up_date|date:'Y-m-d'|default:'' }}"
+                   class="input input-sm input-bordered w-full rounded-xl bg-slate-50/50 text-xs" />
+          </div>
+          <div>
+            <label class="block font-bold text-slate-800 mb-1">Signed Rx Slip (Optional)</label>
+            <input type="file"
+                   name="prescription_file"
+                   accept=".pdf,.jpg,.jpeg,.png"
+                   class="file-input file-input-sm file-input-bordered w-full rounded-xl bg-slate-50/50 text-xs" />
+          </div>
+        </div>
+
+        <!-- Action CTAs -->
+        <div class="pt-3 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <button type="submit"
+                  name="finalize"
+                  value="false"
+                  class="btn btn-outline btn-sm rounded-xl font-bold w-full sm:w-auto text-slate-700 border-slate-300 hover:bg-slate-50 gap-1.5">
+            <i data-lucide="save" class="w-3.5 h-3.5"></i>
+            <span>Save Draft</span>
+          </button>
+
+          <button type="submit"
+                  name="finalize"
+                  value="true"
+                  onclick="return confirm('Finalize clinical note and complete this teleconsultation? The patient will receive their summary.');"
+                  class="btn btn-primary btn-sm rounded-xl font-bold w-full sm:w-auto text-white shadow-xs gap-1.5">
+            <i data-lucide="check-check" class="w-4 h-4"></i>
+            <span>Finalize & Complete</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+
+  {% else %}
+    <!-- PATIENT READ-ONLY PRESCRIPTION VIEW (LIVE SYNCED) -->
+    <div id="patient-notes-container"
+         hx-get="{% url 'telemed_note_save' appointment.id %}"
+         hx-trigger="every 4s"
+         hx-select="#patient-notes-container"
+         hx-swap="outerHTML"
+         class="space-y-4">
+      
+      {% if consultation_note and consultation_note.diagnosis or consultation_note.prescription %}
+        <div class="p-4 bg-slate-50 border border-slate-200/90 rounded-2xl space-y-4">
+          
+          <!-- Header -->
+          <div class="flex items-start justify-between gap-2 pb-3 border-b border-slate-200/80">
+            <div>
+              <span class="badge badge-primary badge-outline text-[10px] font-bold">Official Clinical Summary</span>
+              <h3 class="font-bold text-slate-900 text-sm mt-1">
+                Dr. {{ appointment.doctor.user.full_name }}
+              </h3>
+              <p class="text-[11px] text-slate-500">
+                NMC Reg #{{ appointment.doctor.nmc_number }} • {{ appointment.doctor.department.name }}
+              </p>
+            </div>
+            {% if consultation_note.is_finalized %}
+              <span class="badge badge-success text-white text-[10px] font-bold">Finalized</span>
+            {% else %}
+              <span class="badge badge-warning text-white text-[10px] font-bold">Live Draft</span>
+            {% endif %}
+          </div>
+
+          <!-- Diagnosis -->
+          {% if consultation_note.diagnosis %}
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Diagnosis</span>
+              <p class="text-xs font-bold text-slate-900 mt-0.5">{{ consultation_note.diagnosis }}</p>
+            </div>
+          {% endif %}
+
+          <!-- Medications -->
+          {% if consultation_note.prescription %}
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Prescribed Medications (Rx)</span>
+              <div class="p-3 bg-white rounded-xl border border-slate-200 text-xs font-mono text-slate-800 whitespace-pre-line mt-1">
+                {{ consultation_note.prescription }}
+              </div>
+            </div>
+          {% endif %}
+
+          <!-- Advice -->
+          {% if consultation_note.advice %}
+            <div>
+              <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Doctor's Advice</span>
+              <p class="text-xs text-slate-700 leading-relaxed mt-0.5 whitespace-pre-line">{{ consultation_note.advice }}</p>
+            </div>
+          {% endif %}
+
+          <!-- Follow-Up -->
+          {% if consultation_note.follow_up_date %}
+            <div class="flex items-center gap-2 text-xs text-sky-800 bg-sky-50 rounded-xl p-2.5 border border-sky-100">
+              <i data-lucide="calendar" class="w-4 h-4 text-sky-600 flex-shrink-0"></i>
+              <span>Suggested Next Review: <strong>{{ consultation_note.follow_up_date|date:"l, M d, Y" }}</strong></span>
+            </div>
+          {% endif %}
+
+          <!-- Prescription File Download & Print / Save PDF -->
+          <div class="pt-3 border-t border-slate-200/80 space-y-2">
+            <button type="button"
+                    onclick="printPrescriptionSlip()"
+                    class="btn btn-primary btn-sm rounded-xl w-full text-white shadow-xs gap-2">
+              <i data-lucide="printer" class="w-4 h-4"></i>
+              <span>Print / Save Doctor's Advice (PDF)</span>
+            </button>
+
+            {% if consultation_note.prescription_file %}
+              <a href="{{ consultation_note.prescription_file.url }}"
+                 target="_blank"
+                 class="btn btn-outline btn-sm rounded-xl w-full text-sky-700 border-sky-200 hover:bg-sky-50 gap-2">
+                <i data-lucide="download" class="w-4 h-4"></i>
+                <span>Download Attached Slip</span>
+              </a>
+            {% endif %}
+          </div>
+
+        </div>
+      {% else %}
+        <div class="py-10 text-center bg-slate-50/60 rounded-2xl border border-dashed border-slate-200 p-6 space-y-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center mx-auto shadow-2xs">
+            <i data-lucide="stethoscope" class="w-5 h-5"></i>
+          </div>
+          <p class="text-xs font-bold text-slate-800">Prescription in Progress</p>
+          <p class="text-[11px] text-slate-500 leading-relaxed max-w-xs mx-auto">
+            Dr. {{ appointment.doctor.user.full_name }} will draft your diagnosis, medications, and advice during or upon concluding this video consultation.
+          </p>
+        </div>
+      {% endif %}
+
+    </div>
+  {% endif %}
+
+</div>
+
+<!-- Printable Prescription Script -->
+<script>
+  function printPrescriptionSlip() {
+    const printWindow = window.open('', '_blank', 'width=800,height=900');
+    if (!printWindow) {
+      alert('Please allow popups to print/save your prescription slip.');
+      return;
+    }
+    printWindow.document.write(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Medical Prescription - Dr. {{ appointment.doctor.user.full_name }}</title>
+        <style>
+          @page { size: A4; margin: 20mm; }
+          body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; padding: 24px; color: #1e293b; line-height: 1.5; font-size: 13px; }
+          .header { border-bottom: 2px solid #0284c7; padding-bottom: 14px; margin-bottom: 20px; display: flex; justify-content: space-between; align-items: flex-start; }
+          .logo-title { font-size: 22px; font-weight: 800; color: #0284c7; margin: 0; }
+          .logo-sub { font-size: 11px; color: #64748b; margin-top: 3px; }
+          .badge { background: #0284c7; color: white; padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: bold; text-transform: uppercase; }
+          .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 14px; border-radius: 10px; margin-bottom: 20px; }
+          .meta-label { font-size: 10px; color: #64748b; font-weight: bold; text-transform: uppercase; margin-bottom: 2px; }
+          .meta-val { font-weight: bold; color: #0f172a; font-size: 13px; }
+          .section { margin-bottom: 18px; }
+          .sec-title { font-size: 11px; font-weight: bold; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 6px; }
+          .sec-content { font-size: 13px; white-space: pre-line; color: #1e293b; }
+          .rx-box { background: #f0fdf4; border: 1px solid #bbf7d0; padding: 14px; border-radius: 10px; font-family: monospace; font-size: 12px; white-space: pre-line; color: #166534; }
+          .footer { margin-top: 36px; padding-top: 12px; border-top: 1px solid #e2e8f0; display: flex; justify-content: space-between; align-items: flex-end; font-size: 10px; color: #94a3b8; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <h1 class="logo-title">Swasthya-Sewa</h1>
+            <p class="logo-sub">Clinical Teleconsultation Summary & Official Prescription</p>
+          </div>
+          <div>
+            <span class="badge">Verified Telemed Slip</span>
+          </div>
+        </div>
+        <div class="meta-grid">
+          <div>
+            <div class="meta-label">Attending Doctor</div>
+            <div class="meta-val">Dr. {{ appointment.doctor.user.full_name }}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">NMC Reg #{{ appointment.doctor.nmc_number }} • {{ appointment.doctor.department.name }}</div>
+          </div>
+          <div>
+            <div class="meta-label">Patient Name</div>
+            <div class="meta-val">{{ appointment.patient.full_name }}</div>
+            <div style="font-size: 11px; color: #64748b; margin-top: 2px;">Date: {{ appointment.appointment_date|date:"F d, Y" }} ({{ appointment.start_time|time:"g:i A" }})</div>
+          </div>
+        </div>
+        {% if consultation_note.diagnosis %}
+        <div class="section">
+          <div class="sec-title">Clinical Diagnosis / Impression</div>
+          <div class="sec-content" style="font-weight: 700;">{{ consultation_note.diagnosis }}</div>
+        </div>
+        {% endif %}
+        {% if consultation_note.symptoms %}
+        <div class="section">
+          <div class="sec-title">Reported Symptoms & Clinical History</div>
+          <div class="sec-content">{{ consultation_note.symptoms }}</div>
+        </div>
+        {% endif %}
+        {% if consultation_note.prescription %}
+        <div class="section">
+          <div class="sec-title">Prescribed Medications & Dosages (Rx)</div>
+          <div class="rx-box">{{ consultation_note.prescription }}</div>
+        </div>
+        {% endif %}
+        {% if consultation_note.advice %}
+        <div class="section">
+          <div class="sec-title">Dietary & Lifestyle Advice</div>
+          <div class="sec-content">{{ consultation_note.advice }}</div>
+        </div>
+        {% endif %}
+        {% if consultation_note.follow_up_date %}
+        <div class="section">
+          <div class="sec-title">Suggested Follow-Up</div>
+          <div class="sec-content" style="font-weight: 700;">Next review recommended on {{ consultation_note.follow_up_date|date:"l, F d, Y" }}</div>
+        </div>
+        {% endif %}
+        <div class="footer">
+          <div>Swasthya-Sewa Digital Health Platform • Reference #{{ appointment.id|stringformat:".8s"|upper }}</div>
+          <div style="text-align: right;">
+            <div>Digitally Signed by: Dr. {{ appointment.doctor.user.full_name }}</div>
+            <div>Issued: {{ consultation_note.finalized_at|default:appointment.appointment_date|date:"Y-m-d H:i" }}</div>
+          </div>
+        </div>
+        <script>
+          window.onload = function() { window.print(); };
+        <\/script>
+      </body>
+      </html>
+    `);
+    printWindow.document.close();
+  }
+</script>
+
+<!-- Icon refresh trigger for HTMX re-renders -->
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>

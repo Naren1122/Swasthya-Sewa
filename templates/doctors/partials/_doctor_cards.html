@@ -1,11 +1,65 @@
 {% if doctors %}
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
     {% for doctor in doctors %}
       {% include "components/doctors/doctor_card.html" with doctor=doctor %}
     {% endfor %}
   </div>
+
+  <!-- 8 Items Per Page Pagination Bar -->
+  {% if page_obj and page_obj.has_other_pages %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200/80 mt-6">
+      <p class="text-xs text-slate-500 font-medium">
+        Showing <span class="font-bold text-slate-800">{{ page_obj.start_index }}–{{ page_obj.end_index }}</span> of <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> verified doctors
+      </p>
+
+      <div class="join shadow-xs">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-get="{% url 'doctor_directory' %}?page={{ page_obj.previous_page_number }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-target="#doctor-grid"
+             hx-push-url="true"
+             class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+            « Prev
+          </a>
+        {% else %}
+          <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>« Prev</button>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <button class="join-item btn btn-sm btn-primary text-white font-bold">{{ num }}</button>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+               hx-get="{% url 'doctor_directory' %}?page={{ num }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+               hx-target="#doctor-grid"
+               hx-push-url="true"
+               class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+              {{ num }}
+            </a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-get="{% url 'doctor_directory' %}?page={{ page_obj.next_page_number }}{% if selected_dept %}&dept={{ selected_dept }}{% endif %}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-target="#doctor-grid"
+             hx-push-url="true"
+             class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+            Next »
+          </a>
+        {% else %}
+          <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>Next »</button>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
 {% else %}
   <div class="col-span-full py-12">
     {% include "components/cards/empty_state.html" with title="No Doctors Found" message="We couldn't find any certified doctors matching your current specialty or search query. Try clearing your filters." cta_url="/doctors/" cta_label="Clear All Filters" cta_icon="rotate-ccw" icon="user-x" %}
   </div>
 {% endif %}
+
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>

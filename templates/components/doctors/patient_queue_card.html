@@ -2,8 +2,13 @@
   Atomic Component: Doctor Clinical Patient Queue & Consultation Manager
   Allows doctors to review pending requests, accept/reject bookings, join video calls, and complete consultations.
 {% endcomment %}
-<div class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-7 shadow-sm space-y-6"
-     x-data="{ activeTab: '{% if pending_appointments %}pending{% else %}upcoming{% endif %}' }">
+<div id="doctor-queue-container"
+     hx-get="{% url 'doctor_dashboard' %}"
+     hx-trigger="every 6s"
+     hx-select="#doctor-queue-container"
+     hx-swap="outerHTML"
+     class="bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-7 shadow-sm space-y-6"
+     x-data="{ activeTab: localStorage.getItem('doctor_queue_tab') || '{% if pending_appointments %}pending{% else %}upcoming{% endif %}' }">
   
   <!-- Header with Tab Navigation -->
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-4 border-b border-slate-100">
@@ -22,7 +27,7 @@
     <!-- Filter Tabs -->
     <div class="flex items-center gap-1.5 bg-slate-100/80 p-1 rounded-2xl">
       <button type="button"
-              @click="activeTab = 'pending'"
+              @click="activeTab = 'pending'; localStorage.setItem('doctor_queue_tab', 'pending')"
               :class="activeTab === 'pending' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700 font-semibold'"
               class="px-3.5 py-1.5 rounded-xl text-xs transition-all flex items-center gap-1.5">
         <span>Pending Review</span>
@@ -32,7 +37,7 @@
       </button>
 
       <button type="button"
-              @click="activeTab = 'upcoming'"
+              @click="activeTab = 'upcoming'; localStorage.setItem('doctor_queue_tab', 'upcoming')"
               :class="activeTab === 'upcoming' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700 font-semibold'"
               class="px-3.5 py-1.5 rounded-xl text-xs transition-all flex items-center gap-1.5">
         <span>Scheduled Queue</span>
@@ -42,7 +47,7 @@
       </button>
 
       <button type="button"
-              @click="activeTab = 'history'"
+              @click="activeTab = 'history'; localStorage.setItem('doctor_queue_tab', 'history')"
               :class="activeTab === 'history' ? 'bg-white text-slate-900 shadow-xs font-bold' : 'text-slate-500 hover:text-slate-700 font-semibold'"
               class="px-3.5 py-1.5 rounded-xl text-xs transition-all">
         <span>History</span>
@@ -112,7 +117,12 @@
               <!-- Accept & Reject Action Forms -->
               <div class="flex items-center gap-2">
                 <!-- Reject -->
-                <form method="POST" action="{% url 'doctor_appointment_reject' app.id %}"
+                <form method="POST"
+                      action="{% url 'doctor_appointment_reject' app.id %}"
+                      hx-post="{% url 'doctor_appointment_reject' app.id %}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML"
                       onsubmit="return confirm('Reject this consultation request? Slot will be released.');">
                   {% csrf_token %}
                   <button type="submit" class="btn btn-ghost btn-xs text-rose-600 hover:bg-rose-50 rounded-lg gap-1">
@@ -122,7 +132,12 @@
                 </form>
 
                 <!-- Accept -->
-                <form method="POST" action="{% url 'doctor_appointment_accept' app.id %}">
+                <form method="POST"
+                      action="{% url 'doctor_appointment_accept' app.id %}"
+                      hx-post="{% url 'doctor_appointment_accept' app.id %}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML">
                   {% csrf_token %}
                   <button type="submit" class="btn btn-success btn-xs text-white rounded-lg font-bold gap-1 shadow-sm">
                     <i data-lucide="check" class="w-3.5 h-3.5 stroke-[3]"></i>
@@ -180,16 +195,20 @@
             <!-- Action Controls: Video Launch, Complete, Cancel -->
             <div class="flex items-center gap-2 self-end md:self-center">
               {% if app.consultation_type == 'TELEMEDICINE' %}
-                <button type="button"
-                        onclick="alert('Telemed room: {{ app.telemed_room_id }} ready. Video integration starting in Phase 5.')"
-                        class="btn btn-secondary btn-xs sm:btn-sm rounded-xl font-bold text-white shadow-sm gap-1.5">
+                <a href="{% url 'telemed_room' app.id %}"
+                   class="btn btn-secondary btn-xs sm:btn-sm rounded-xl font-bold text-white shadow-sm gap-1.5">
                   <i data-lucide="video" class="w-3.5 h-3.5"></i>
                   <span>Start Video</span>
-                </button>
+                </a>
               {% endif %}
 
               <!-- Mark Completed -->
-              <form method="POST" action="{% url 'doctor_appointment_complete' app.id %}"
+              <form method="POST"
+                    action="{% url 'doctor_appointment_complete' app.id %}"
+                    hx-post="{% url 'doctor_appointment_complete' app.id %}"
+                    hx-target="#doctor-queue-container"
+                    hx-select="#doctor-queue-container"
+                    hx-swap="outerHTML"
                     onsubmit="return confirm('Mark this consultation with {{ app.patient.full_name }} as finished/completed?');">
                 {% csrf_token %}
                 <button type="submit" class="btn btn-primary btn-xs sm:btn-sm rounded-xl font-bold shadow-sm gap-1.5">
@@ -202,6 +221,42 @@
           </div>
         {% endfor %}
       </div>
+
+      <!-- 8 Items Per Page Pagination for Scheduled Queue -->
+      {% if upcoming_page_obj and upcoming_page_obj.has_other_pages %}
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+          <span class="text-slate-400 font-medium text-[11px]">
+            Showing {{ upcoming_page_obj.start_index }}–{{ upcoming_page_obj.end_index }} of {{ upcoming_page_obj.paginator.count }} consultations
+          </span>
+          <div class="join shadow-2xs">
+            {% if upcoming_page_obj.has_previous %}
+              <button type="button"
+                      hx-get="{% url 'doctor_dashboard' %}?upcoming_page={{ upcoming_page_obj.previous_page_number }}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML"
+                      class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">« Prev</button>
+            {% else %}
+              <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>« Prev</button>
+            {% endif %}
+
+            <span class="join-item btn btn-xs btn-ghost no-animation text-slate-600 font-semibold cursor-default text-[11px]">
+              {{ upcoming_page_obj.number }} / {{ upcoming_page_obj.paginator.num_pages }}
+            </span>
+
+            {% if upcoming_page_obj.has_next %}
+              <button type="button"
+                      hx-get="{% url 'doctor_dashboard' %}?upcoming_page={{ upcoming_page_obj.next_page_number }}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML"
+                      class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">Next »</button>
+            {% else %}
+              <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>Next »</button>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
     {% else %}
       <div class="p-8 text-center bg-slate-50 border border-slate-200/80 rounded-2xl space-y-1">
         <i data-lucide="calendar" class="w-7 h-7 mx-auto text-sky-500 mb-1"></i>
@@ -239,6 +294,42 @@
           </div>
         {% endfor %}
       </div>
+
+      <!-- 8 Items Per Page Pagination for History -->
+      {% if past_page_obj and past_page_obj.has_other_pages %}
+        <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+          <span class="text-slate-400 font-medium text-[11px]">
+            Showing {{ past_page_obj.start_index }}–{{ past_page_obj.end_index }} of {{ past_page_obj.paginator.count }} records
+          </span>
+          <div class="join shadow-2xs">
+            {% if past_page_obj.has_previous %}
+              <button type="button"
+                      hx-get="{% url 'doctor_dashboard' %}?past_page={{ past_page_obj.previous_page_number }}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML"
+                      class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">« Prev</button>
+            {% else %}
+              <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>« Prev</button>
+            {% endif %}
+
+            <span class="join-item btn btn-xs btn-ghost no-animation text-slate-600 font-semibold cursor-default text-[11px]">
+              {{ past_page_obj.number }} / {{ past_page_obj.paginator.num_pages }}
+            </span>
+
+            {% if past_page_obj.has_next %}
+              <button type="button"
+                      hx-get="{% url 'doctor_dashboard' %}?past_page={{ past_page_obj.next_page_number }}"
+                      hx-target="#doctor-queue-container"
+                      hx-select="#doctor-queue-container"
+                      hx-swap="outerHTML"
+                      class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">Next »</button>
+            {% else %}
+              <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>Next »</button>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
     {% else %}
       <div class="p-6 text-center text-xs text-slate-400">
         No completed or past consultation records found.
@@ -246,5 +337,9 @@
     {% endif %}
   </div>
 
+  <!-- Trigger Lucide Icons on dynamic HTMX updates -->
+  <script>
+    if (window.lucide) lucide.createIcons();
+  </script>
 </div>
 

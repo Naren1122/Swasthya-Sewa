@@ -17,12 +17,51 @@
     <!-- Visual Status Legend -->
     {% include "components/doctors/slot_legend.html" %}
 
-    <!-- Slot Buttons Grid -->
-    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-2">
-      {% for slot in slot_data.slots %}
+    <!-- Slot Buttons Grid (8 Slots per Page) -->
+    <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2">
+      {% for slot in paginated_slots|default:slot_data.slots %}
         {% include "components/doctors/slot_button.html" with slot=slot %}
       {% endfor %}
     </div>
+
+    <!-- 8 Slots Pagination Controls -->
+    {% if slot_page_obj and slot_page_obj.has_other_pages %}
+      <div class="flex items-center justify-between pt-3 border-t border-slate-100 text-xs">
+        <span class="text-slate-400 font-medium text-[11px]">
+          Slots {{ slot_page_obj.start_index }}–{{ slot_page_obj.end_index }} of {{ slot_page_obj.paginator.count }}
+        </span>
+
+        <div class="join shadow-2xs">
+          {% if slot_page_obj.has_previous %}
+            <button type="button"
+                    hx-get="{% url 'doctor_slots_partial' doctor.slug %}?date={{ target_date|date:'Y-m-d' }}&slot_page={{ slot_page_obj.previous_page_number }}"
+                    hx-target="#slot-container"
+                    hx-swap="outerHTML"
+                    class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">
+              « Prev
+            </button>
+          {% else %}
+            <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>« Prev</button>
+          {% endif %}
+
+          <span class="join-item btn btn-xs btn-ghost no-animation text-slate-600 font-semibold cursor-default text-[11px]">
+            {{ slot_page_obj.number }} / {{ slot_page_obj.paginator.num_pages }}
+          </span>
+
+          {% if slot_page_obj.has_next %}
+            <button type="button"
+                    hx-get="{% url 'doctor_slots_partial' doctor.slug %}?date={{ target_date|date:'Y-m-d' }}&slot_page={{ slot_page_obj.next_page_number }}"
+                    hx-target="#slot-container"
+                    hx-swap="outerHTML"
+                    class="join-item btn btn-xs btn-outline border-slate-200 text-slate-700 hover:bg-slate-50">
+              Next »
+            </button>
+          {% else %}
+            <button class="join-item btn btn-xs btn-outline border-slate-200 text-slate-300 btn-disabled" disabled>Next »</button>
+          {% endif %}
+        </div>
+      </div>
+    {% endif %}
 
     {% if slot_data.available_slots_count == 0 %}
       <div class="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-center text-xs text-slate-500">

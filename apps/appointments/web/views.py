@@ -5,6 +5,7 @@ from django.views import View
 from django.http import HttpResponse, JsonResponse
 from django.contrib import messages
 from django.contrib.auth.mixins import LoginRequiredMixin
+from django.core.paginator import Paginator
 from django.db.models import Q
 from django.utils import timezone
 from django.utils.decorators import method_decorator
@@ -19,6 +20,7 @@ from apps.appointments.services.booking_service import (
     reject_appointment,
     complete_appointment,
     cancel_confirmed_appointment,
+    release_expired_holds,
 )
 from apps.appointments.exceptions import (
     SlotUnavailableError,
@@ -125,15 +127,23 @@ class AppointmentCancelHoldView(LoginRequiredMixin, View):
 
 class PatientBookingsView(LoginRequiredMixin, View):
     """
-    Lists the authenticated patient's current and past consultations.
+    Lists the authenticated patient's current and past consultations with 8 items per page pagination.
     """
     def get(self, request, *args, **kwargs):
-        appointments = Appointment.objects.select_related('doctor', 'doctor__user', 'doctor__department').filter(
+        # Sweep any lapsed 10-minute holds so they don't linger in PENDING_PAYMENT
+        release_expired_holds()
+
+        appointments_qs = Appointment.objects.select_related('doctor', 'doctor__user', 'doctor__department').filter(
             patient=request.user
-        ).order_by('-appointment_date', '-start_time')
+        ).order_by('-created_at')
+
+        paginator = Paginator(appointments_qs, 8)
+        page_number = request.GET.get('page', 1)
+        page_obj = paginator.get_page(page_number)
 
         context = {
-            'appointments': appointments,
+            'appointments': page_obj.object_list,
+            'page_obj': page_obj,
             'today': timezone.localdate(),
         }
         return render(request, 'appointments/my_bookings.html', context)
@@ -179,7 +189,7 @@ class AppointmentDetailView(LoginRequiredMixin, View):
     """
     def get(self, request, appointment_id, *args, **kwargs):
         appointment = get_object_or_404(
-            Appointment.objects.select_related('doctor', 'doctor__user', 'doctor__department', 'patient'),
+            Appointment.objects.select_related('doctor', 'doctor__user', 'doctor__department', 'patient', 'consultation_note'),
             Q(patient=request.user) | Q(doctor__user=request.user),
             id=appointment_id
         )
@@ -212,6 +222,41 @@ class AppointmentCancelView(LoginRequiredMixin, View):
             messages.error(request, str(err))
 
         return redirect(request.META.get('HTTP_REFERER', 'patient_bookings'))
+
+
+class AppointmentDeleteView(LoginRequiredMixin, View):
+    """
+    Deletes or removes an appointment record from the patient's personal booking list.
+    Releases active slot holds and frees up doctor schedule if active.
+    """
+    def post(self, request, appointment_id, *args, **kwargs):
+        appointment = Appointment.objects.filter(id=appointment_id, patient=request.user).first()
+        if not appointment:
+            messages.info(request, "This appointment record was already removed.")
+            return redirect('patient_bookings')
+
+        # If holding or confirmed, release slot hold / notify
+        if appointment.status == Appointment.Status.PENDING_PAYMENT:
+            cancel_appointment_hold(user=request.user, appointment_id=appointment.id)
+        elif appointment.status in [Appointment.Status.PENDING, Appointment.Status.ACCEPTED, Appointment.Status.CONFIRMED]:
+            try:
+                cancel_confirmed_appointment(
+                    user=request.user,
+                    appointment_id=appointment.id,
+                    cancellation_reason="Cancelled and deleted by patient"
+                )
+            except Exception:
+                pass
+
+        appointment.delete()
+        messages.success(request, "Consultation record deleted successfully.")
+
+        if request.headers.get('HX-Request'):
+            response = HttpResponse(status=200)
+            response['HX-Redirect'] = reverse('patient_bookings')
+            return response
+
+        return redirect('patient_bookings')
 
 
 @method_decorator(doctor_required, name='dispatch')

@@ -32,6 +32,10 @@ class KhaltiPaymentService:
         return 'https://a.khalti.com/api/v2/epayment/lookup/'
 
     @classmethod
+    def get_refund_url(cls) -> str:
+        return 'https://a.khalti.com/api/v2/epayment/refund/'
+
+    @classmethod
     def initiate_payment(cls, payment: Payment, return_url: str, website_url: str) -> Dict[str, Any]:
         """
         Sends server-to-server request to Khalti v2 to initiate payment.
@@ -105,3 +109,29 @@ class KhaltiPaymentService:
         except Exception as err:
             logger.exception(f"Khalti lookup exception: {str(err)}")
             return False, 'ERROR', {'error': str(err)}
+
+    @classmethod
+    def refund_payment(cls, pidx: str, reason: str = "") -> Tuple[bool, Dict[str, Any]]:
+        """
+        Initiates refund with Khalti using transaction pidx.
+        Returns: (is_success: bool, response_data: dict)
+        """
+        headers = {
+            'Authorization': f"Key {cls.get_secret_key()}",
+            'Content-Type': 'application/json',
+        }
+        payload = {
+            'pidx': pidx,
+            'reason': reason or 'Consultation cancelled or rejected',
+        }
+        try:
+            response = requests.post(cls.get_refund_url(), json=payload, headers=headers, timeout=15)
+            data = response.json() if response.content else {}
+            if response.status_code in [200, 201]:
+                return True, data
+            else:
+                logger.warning(f"Khalti refund returned status {response.status_code}: {data}")
+                return False, data
+        except Exception as err:
+            logger.exception(f"Khalti refund exception: {str(err)}")
+            return False, {'error': str(err)}

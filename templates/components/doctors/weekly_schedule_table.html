@@ -45,12 +45,20 @@
               </td>
               {% if editable %}
                 <td class="text-right">
-                  <form method="POST" action="{% url 'doctor_schedule_delete' shift.id %}" onsubmit="return confirm('Remove this working shift for {{ shift.get_day_of_week_display }}?');" class="inline">
-                    {% csrf_token %}
-                    <button type="submit" class="btn btn-ghost btn-circle btn-xs text-rose-500 hover:bg-rose-50" title="Delete shift">
-                      <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                  <div class="flex items-center justify-end gap-1">
+                    <button type="button"
+                            onclick="openEditShiftModal('{{ shift.id }}', '{{ shift.day_of_week }}', '{{ shift.start_time|time:'H:i' }}', '{{ shift.end_time|time:'H:i' }}', '{{ shift.slot_duration_minutes }}')"
+                            class="btn btn-ghost btn-circle btn-xs text-sky-600 hover:bg-sky-50"
+                            title="Edit shift">
+                      <i data-lucide="pencil" class="w-3.5 h-3.5"></i>
                     </button>
-                  </form>
+                    <form method="POST" action="{% url 'doctor_schedule_delete' shift.id %}" onsubmit="if (!confirm('Remove this working shift for {{ shift.get_day_of_week_display }}?')) return false; this.querySelector('button[type=submit]').disabled = true;" class="inline">
+                      {% csrf_token %}
+                      <button type="submit" class="btn btn-ghost btn-circle btn-xs text-rose-500 hover:bg-rose-50" title="Delete shift">
+                        <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+                      </button>
+                    </form>
+                  </div>
                 </td>
               {% endif %}
             </tr>
@@ -67,4 +75,100 @@
       {% endif %}
     </div>
   {% endif %}
+
+  <!-- Edit Shift Modal -->
+  <dialog id="edit-shift-modal" class="modal modal-bottom sm:modal-middle">
+    <div class="modal-box bg-white rounded-3xl p-6 sm:p-8 max-w-md shadow-2xl border border-slate-200">
+      <div class="flex items-center justify-between pb-4 border-b border-slate-100">
+        <div class="flex items-center gap-2.5">
+          <div class="w-10 h-10 rounded-2xl bg-sky-50 text-sky-600 flex items-center justify-center">
+            <i data-lucide="edit-3" class="w-5 h-5"></i>
+          </div>
+          <div>
+            <h3 class="font-extrabold text-lg text-slate-900 leading-tight">Edit Working Shift</h3>
+            <p class="text-xs text-slate-500">Update consultation hours and slot interval</p>
+          </div>
+        </div>
+        <form method="dialog">
+          <button class="btn btn-ghost btn-circle btn-sm text-slate-400 hover:text-slate-700">
+            <i data-lucide="x" class="w-5 h-5"></i>
+          </button>
+        </form>
+      </div>
+
+      <form id="edit-shift-form" method="POST" action="" class="space-y-4 mt-5">
+        {% csrf_token %}
+
+        <div class="form-control w-full">
+          <label class="label pb-1.5 pt-0">
+            <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Day of the Week</span>
+          </label>
+          <select id="edit-shift-day" name="day_of_week" class="select select-bordered w-full rounded-xl text-sm focus:select-primary bg-white text-slate-900">
+            <option value="0">Monday</option>
+            <option value="1">Tuesday</option>
+            <option value="2">Wednesday</option>
+            <option value="3">Thursday</option>
+            <option value="4">Friday</option>
+            <option value="5">Saturday</option>
+            <option value="6">Sunday</option>
+          </select>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <div class="form-control w-full">
+            <label class="label pb-1.5 pt-0">
+              <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Shift Start</span>
+            </label>
+            <input type="time" id="edit-shift-start" name="start_time" required class="input input-bordered w-full rounded-xl text-sm focus:input-primary bg-white text-slate-900" />
+          </div>
+          <div class="form-control w-full">
+            <label class="label pb-1.5 pt-0">
+              <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Shift End</span>
+            </label>
+            <input type="time" id="edit-shift-end" name="end_time" required class="input input-bordered w-full rounded-xl text-sm focus:input-primary bg-white text-slate-900" />
+          </div>
+        </div>
+
+        <div class="form-control w-full">
+          <label class="label pb-1.5 pt-0">
+            <span class="label-text font-bold text-xs uppercase tracking-wider text-slate-700">Slot Duration Per Patient</span>
+          </label>
+          <select id="edit-shift-duration" name="slot_duration_minutes" class="select select-bordered w-full rounded-xl text-sm focus:select-primary bg-white text-slate-900">
+            <option value="15">15 Minutes (Quick follow-up)</option>
+            <option value="20">20 Minutes (Standard clinical consultation)</option>
+            <option value="30">30 Minutes (Comprehensive specialty review)</option>
+            <option value="45">45 Minutes (Psychiatry / In-depth assessment)</option>
+            <option value="60">60 Minutes (Extended procedure)</option>
+          </select>
+        </div>
+
+        <div class="modal-action pt-2">
+          <button type="button" onclick="document.getElementById('edit-shift-modal').close()" class="btn btn-ghost btn-sm rounded-xl text-slate-600">
+            Cancel
+          </button>
+          <button type="submit" class="btn btn-primary btn-sm rounded-xl font-bold shadow-md shadow-sky-600/20 px-5 gap-2">
+            <i data-lucide="check" class="w-4 h-4"></i>
+            <span>Update Shift</span>
+          </button>
+        </div>
+
+      </form>
+    </div>
+    <form method="dialog" class="modal-backdrop bg-slate-900/40 backdrop-blur-sm">
+      <button>close</button>
+    </form>
+  </dialog>
+
+  <script>
+    function openEditShiftModal(shiftId, dayOfWeek, startTime, endTime, duration) {
+      const form = document.getElementById('edit-shift-form');
+      form.action = `/doctor/schedules/${shiftId}/edit/`;
+      document.getElementById('edit-shift-day').value = dayOfWeek;
+      document.getElementById('edit-shift-start').value = startTime;
+      document.getElementById('edit-shift-end').value = endTime;
+      document.getElementById('edit-shift-duration').value = duration;
+      document.getElementById('edit-shift-modal').showModal();
+      if (window.lucide) lucide.createIcons();
+    }
+  </script>
 </div>

@@ -9,7 +9,7 @@ from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from apps.payments.models import Payment
 from apps.appointments.models import Appointment
-from apps.appointments.services.booking_service import confirm_appointment_booking
+from apps.appointments.services.booking_service import confirm_appointment_booking, cancel_appointment_hold
 from apps.payments.services.esewa_service import EsewaPaymentService
 from apps.payments.services.khalti_service import KhaltiPaymentService
 from apps.payments.api.serializers import (
@@ -129,8 +129,9 @@ class PaymentInitiateAPIView(APIView):
                 }, status=status.HTTP_200_OK)
             else:
                 payment.mark_failed(response_data=result)
+                cancel_appointment_hold(user=request.user, appointment_id=appointment.id)
                 return Response({
-                    'detail': f"Khalti initiation failed: {result.get('error', 'Unknown error')}"
+                    'detail': f"Khalti initiation failed: {result.get('error', 'Unknown error')}. Slot hold has been released."
                 }, status=status.HTTP_400_BAD_REQUEST)
 
         return Response({'detail': "Invalid payment gateway choice."}, status=status.HTTP_400_BAD_REQUEST)
@@ -199,8 +200,9 @@ class PaymentVerifyAPIView(APIView):
 
             if not is_success:
                 payment.mark_failed(response_data=lookup_data)
+                cancel_appointment_hold(user=payment.patient, appointment_id=payment.appointment.id)
                 return Response(
-                    {'detail': f"Khalti payment verification failed ({status_str})."},
+                    {'detail': f"Khalti payment verification failed ({status_str}). Slot hold has been released."},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 

@@ -1,0 +1,93 @@
+{% if departments %}
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+    {% for dept in departments %}
+      <a href="{% url 'doctor_directory' %}?dept={{ dept.slug }}"
+         class="group bg-white rounded-3xl border border-slate-200/90 p-5 sm:p-6 shadow-sm hover:shadow-md hover:border-teal-300 transition-all flex flex-col justify-between space-y-4">
+        
+        <div class="space-y-3">
+          <div class="w-12 h-12 rounded-2xl bg-teal-50 text-teal-600 flex items-center justify-center group-hover:scale-105 group-hover:bg-teal-600 group-hover:text-white transition-all shadow-2xs">
+            <i data-lucide="{{ dept.icon_name|default:'activity' }}" class="w-6 h-6"></i>
+          </div>
+
+          <div>
+            <h3 class="font-extrabold text-base text-slate-900 group-hover:text-teal-700 transition-colors">
+              {{ dept.name }}
+            </h3>
+            <p class="text-xs text-slate-500 line-clamp-2 mt-1 leading-relaxed">
+              {{ dept.description|default:"Comprehensive diagnostic and specialist therapeutic care." }}
+            </p>
+          </div>
+        </div>
+
+        <div class="pt-3 border-t border-slate-100 flex items-center justify-between text-xs font-semibold">
+          <span class="text-slate-500">
+            <strong class="text-slate-900">{{ dept.doctor_count }}</strong> specialist{{ dept.doctor_count|pluralize }}
+          </span>
+          <span class="text-teal-600 flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+            <span>Find Doctors</span>
+            <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </span>
+        </div>
+
+      </a>
+    {% endfor %}
+  </div>
+
+  <!-- 8 Items Per Page Pagination Bar -->
+  {% if page_obj and page_obj.has_other_pages %}
+    <div class="flex flex-col sm:flex-row items-center justify-between gap-4 pt-6 border-t border-slate-200/80 mt-6">
+      <p class="text-xs text-slate-500 font-medium">
+        Showing <span class="font-bold text-slate-800">{{ page_obj.start_index }}–{{ page_obj.end_index }}</span> of <span class="font-bold text-slate-800">{{ page_obj.paginator.count }}</span> clinical specialties
+      </p>
+
+      <div class="join shadow-xs">
+        {% if page_obj.has_previous %}
+          <a href="?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-get="{% url 'specialties_list' %}?page={{ page_obj.previous_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-target="#specialty-grid"
+             hx-push-url="true"
+             class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+            « Prev
+          </a>
+        {% else %}
+          <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>« Prev</button>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+          {% if page_obj.number == num %}
+            <button class="join-item btn btn-sm btn-primary text-white font-bold">{{ num }}</button>
+          {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+            <a href="?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}"
+               hx-get="{% url 'specialties_list' %}?page={{ num }}{% if search_query %}&q={{ search_query }}{% endif %}"
+               hx-target="#specialty-grid"
+               hx-push-url="true"
+               class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+              {{ num }}
+            </a>
+          {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+          <a href="?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-get="{% url 'specialties_list' %}?page={{ page_obj.next_page_number }}{% if search_query %}&q={{ search_query }}{% endif %}"
+             hx-target="#specialty-grid"
+             hx-push-url="true"
+             class="join-item btn btn-sm btn-outline text-slate-700 hover:bg-slate-50 border-slate-300">
+            Next »
+          </a>
+        {% else %}
+          <button class="join-item btn btn-sm btn-outline text-slate-300 border-slate-200 btn-disabled" disabled>Next »</button>
+        {% endif %}
+      </div>
+    </div>
+  {% endif %}
+
+{% else %}
+  <div class="col-span-full py-12">
+    {% include "components/cards/empty_state.html" with title="No Specialties Found" message="We couldn't find any medical specialties matching your query. Try clearing your search term." cta_url="/specialties/" cta_label="View All Specialties" cta_icon="rotate-ccw" icon="grid" %}
+  </div>
+{% endif %}
+
+<script>
+  if (window.lucide) lucide.createIcons();
+</script>

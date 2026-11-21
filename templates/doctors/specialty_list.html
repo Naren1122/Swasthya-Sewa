@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block title %}Medical Specialties | Swasthya-Sewa{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  
+  <!-- Header Banner -->
+  <div class="mb-8">
+    <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-100 text-teal-800 text-xs font-semibold mb-2">
+      <i data-lucide="grid" class="w-3.5 h-3.5 text-teal-600"></i>
+      <span>Clinical Disciplines</span>
+    </div>
+    <h1 class="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
+      Explore Medical Specialties
+    </h1>
+    <p class="text-xs sm:text-sm text-slate-500 mt-1 max-w-2xl leading-relaxed">
+      Discover our specialized hospital clinical departments across Nepal. Select a discipline to find certified doctors and check real-time availability.
+    </p>
+  </div>
+
+  <!-- Search Input Bar -->
+  <div class="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 shadow-sm mb-8">
+    <div class="relative w-full">
+      <span class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400">
+        <i data-lucide="search" class="w-5 h-5"></i>
+      </span>
+      <input type="search"
+             name="q"
+             value="{{ search_query|default:'' }}"
+             placeholder="Search specialties by department name or clinical focus..."
+             hx-get="{% url 'specialties_list' %}"
+             hx-trigger="keyup changed delay:300ms, search"
+             hx-target="#specialty-grid"
+             class="input input-bordered w-full rounded-2xl text-sm pl-11 pr-4 py-3.5 bg-white text-slate-900 border-slate-300 focus:input-primary shadow-sm transition-all" />
+    </div>
+  </div>
+
+  <!-- Dynamic Specialties Grid (8 Per Page) -->
+  <div id="specialty-grid">
+    {% include "doctors/partials/_specialty_cards.html" %}
+  </div>
+
+</div>
+{% endblock %}

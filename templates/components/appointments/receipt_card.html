@@ -147,12 +147,11 @@
         <span class="text-xs text-teal-800 font-mono">
           Room ID: <strong class="select-all">{{ appointment.telemed_room_id }}</strong>
         </span>
-        <button type="button"
-                onclick="alert('Telemed Video Room opens directly in browser during scheduled consultation window.')"
-                class="btn btn-secondary btn-sm rounded-xl font-bold text-white shadow-sm gap-2">
+        <a href="{% url 'telemed_room' appointment.id %}"
+           class="btn btn-secondary btn-sm rounded-xl font-bold text-white shadow-sm gap-2">
           <i data-lucide="video" class="w-4 h-4"></i>
           <span>Join Teleconsultation</span>
-        </button>
+        </a>
       </div>
     </div>
   {% else %}
@@ -166,6 +165,78 @@
           Please report to the OPD Reception Counter 15 minutes prior to <strong>{{ appointment.start_time|time:"g:i A" }}</strong>.
           Present your reference number <strong class="font-mono">#{{ appointment.id|stringformat:".8s"|upper }}</strong> or this printed receipt at the counter.
         </p>
+      </div>
+    </div>
+  {% endif %}
+
+  <!-- Official Clinical Consultation Summary & Prescription (if recorded) -->
+  {% if appointment.consultation_note and appointment.consultation_note.diagnosis or appointment.consultation_note.prescription %}
+    <div class="p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200/90 space-y-4">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-200/80">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-xl bg-sky-600 text-white flex items-center justify-center">
+            <i data-lucide="file-signature" class="w-4 h-4"></i>
+          </div>
+          <div>
+            <h4 class="text-sm font-extrabold text-slate-900">Official Doctor's Clinical Summary & Prescription</h4>
+            <p class="text-xs text-slate-500">Dr. {{ appointment.doctor.user.full_name }} • NMC #{{ appointment.doctor.nmc_number }}</p>
+          </div>
+        </div>
+        {% if appointment.consultation_note.is_finalized %}
+          <span class="badge badge-success text-white text-[10px] font-bold">Finalized</span>
+        {% else %}
+          <span class="badge badge-warning text-white text-[10px] font-bold">Draft</span>
+        {% endif %}
+      </div>
+
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+        {% if appointment.consultation_note.diagnosis %}
+          <div>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Clinical Diagnosis</span>
+            <p class="font-bold text-slate-900 mt-0.5 text-sm">{{ appointment.consultation_note.diagnosis }}</p>
+          </div>
+        {% endif %}
+        {% if appointment.consultation_note.follow_up_date %}
+          <div>
+            <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">Suggested Follow-Up</span>
+            <p class="font-bold text-sky-700 mt-0.5">{{ appointment.consultation_note.follow_up_date|date:"l, M d, Y" }}</p>
+          </div>
+        {% endif %}
+      </div>
+
+      {% if appointment.consultation_note.prescription %}
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-1">Prescribed Medications (Rx)</span>
+          <div class="p-3 bg-white rounded-xl border border-slate-200 font-mono text-xs text-slate-800 whitespace-pre-line">
+            {{ appointment.consultation_note.prescription }}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if appointment.consultation_note.advice %}
+        <div>
+          <span class="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">Dietary & Lifestyle Advice</span>
+          <p class="text-xs text-slate-700 leading-relaxed whitespace-pre-line">{{ appointment.consultation_note.advice }}</p>
+        </div>
+      {% endif %}
+
+      <!-- Download & Print Actions -->
+      <div class="pt-3 border-t border-slate-200/80 flex flex-wrap items-center gap-3">
+        <button type="button"
+                onclick="window.print()"
+                class="btn btn-primary btn-xs sm:btn-sm rounded-xl font-bold text-white shadow-xs gap-1.5">
+          <i data-lucide="printer" class="w-3.5 h-3.5"></i>
+          <span>Print / Save Prescription (PDF)</span>
+        </button>
+
+        {% if appointment.consultation_note.prescription_file %}
+          <a href="{{ appointment.consultation_note.prescription_file.url }}"
+             target="_blank"
+             class="btn btn-outline btn-xs sm:btn-sm rounded-xl text-sky-700 border-sky-300 hover:bg-sky-50 gap-1.5">
+            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+            <span>Download Signed Prescription Slip</span>
+          </a>
+        {% endif %}
       </div>
     </div>
   {% endif %}
@@ -211,6 +282,8 @@
         <div>
           {% if last_payment.status == 'SUCCESS' %}
             <span class="badge badge-success text-white text-[10px] font-bold">PAID</span>
+          {% elif last_payment.status == 'REFUNDED' %}
+            <span class="badge badge-error text-white text-[10px] font-bold">REFUNDED</span>
           {% elif last_payment.status == 'FAILED' %}
             <span class="badge badge-error text-white text-[10px] font-bold">FAILED</span>
           {% elif last_payment.gateway == 'CASH_ON_ARRIVAL' %}
@@ -220,6 +293,17 @@
           {% endif %}
         </div>
       </div>
+      {% if last_payment.status == 'REFUNDED' and last_payment.refund_reason %}
+        <div class="p-2.5 rounded-xl bg-rose-50 border border-rose-100 text-[11px] text-rose-700 flex items-start gap-2">
+          <i data-lucide="info" class="w-3.5 h-3.5 flex-shrink-0 mt-0.5"></i>
+          <div>
+            <span class="font-bold">Refund Note:</span> {{ last_payment.refund_reason }}
+            {% if last_payment.refunded_at %}
+              <span class="block text-[10px] text-rose-500 mt-0.5">Processed on {{ last_payment.refunded_at|date:"M d, Y, g:i A" }}</span>
+            {% endif %}
+          </div>
+        </div>
+      {% endif %}
       {% if last_payment.gateway_ref %}
         <div class="flex items-center justify-between text-slate-500">
           <span>Transaction Ref:</span>

@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.shortcuts import render
+from django.conf import settings
+from django.conf.urls.static import static
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from apps.accounts.web.views import PatientDashboardView
 
@@ -25,6 +27,7 @@ urlpatterns = [
     path('api/v1/', include('apps.doctors.api.urls')),
     path('api/v1/', include('apps.appointments.api.urls')),
     path('api/v1/', include('apps.payments.api.urls')),
+    path('api/v1/', include('apps.telemed.api.urls')),
 
     # REST API Documentation (Swagger / OpenAPI)
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),
@@ -39,6 +42,14 @@ urlpatterns = [
     # Payments Web App (eSewa & Khalti Gateway Handlers)
     path('', include('apps.payments.web.urls')),
 
+    # Telemedicine Web App (Jitsi Meet Video Room & Medical Records)
+    path('', include('apps.telemed.web.urls')),
+
     # Home Landing Page
     path('', home_view, name='home'),
 ]
+
+# Development Media & Static Serving
+if settings.DEBUG:
+    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

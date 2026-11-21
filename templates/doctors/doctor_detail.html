@@ -133,7 +133,7 @@
         {% include "components/doctors/calendar_date_picker.html" with doctor=doctor today=today target_date=target_date %}
 
         <!-- Dynamic HTMX Slot Grid Container -->
-        {% include "doctors/partials/_slot_grid.html" with slot_data=initial_slots target_date=target_date doctor=doctor %}
+        {% include "doctors/partials/_slot_grid.html" with slot_data=initial_slots target_date=target_date doctor=doctor slot_page_obj=slot_page_obj paginated_slots=paginated_slots %}
 
       </div>
     </div>

@@ -146,6 +146,24 @@ class AppointmentBookingTests(TestCase):
                 start_time=slot_time
             )
 
+    def test_same_patient_re_holding_slot_is_idempotent(self):
+        """Verify that when the same patient re-clicks their held slot, it returns the existing hold without conflict."""
+        slot_time = time(10, 40)
+        app1 = hold_appointment_slot(
+            patient=self.patient,
+            doctor_id=self.doctor1.id,
+            target_date=self.target_thursday,
+            start_time=slot_time
+        )
+
+        app2 = hold_appointment_slot(
+            patient=self.patient,
+            doctor_id=self.doctor1.id,
+            target_date=self.target_thursday,
+            start_time=slot_time
+        )
+        self.assertEqual(app1.id, app2.id)
+
     def test_cancel_appointment_hold_releases_slot(self):
         """Verify releasing a hold frees up the slot immediately."""
         slot_time = time(11, 0)
